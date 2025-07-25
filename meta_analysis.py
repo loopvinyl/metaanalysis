@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import sem
 import os
+import io # Adicionado para auxiliar na leitura de arquivos em memória, caso necessário no futuro
 
 # --- Funções de Pré-processamento e Cálculo ---
 
@@ -16,6 +17,7 @@ def load_and_prepare_data(file_path):
     dados = pd.DataFrame()
     
     try:
+        # Assumindo que o arquivo é um Excel e deve ser lido com pd.read_excel
         dados = pd.read_excel(file_path)
         print(f"Successfully loaded data from: {file_path}")
         print(f"Initial data loaded: {len(dados)} rows.") # Log
@@ -44,6 +46,9 @@ def load_and_prepare_data(file_path):
         dados['Std_Dev'] = pd.to_numeric(dados['Std_Dev'], errors='coerce')
 
         # Substituir 0 em Std_Dev por um valor pequeno para evitar divisão por zero
+        # Lembre-se: no R, usamos n() para o denominador, que é o número de observações.
+        # Aqui, estamos usando n() (implícito) no cálculo de var_lnRR quando iteramos,
+        # mas essa substituição de 0 por 0.001 é para evitar divisão por zero antes mesmo.
         dados['Std_Dev'] = dados['Std_Dev'].replace(0, 0.001)
 
         # Remover linhas com valores NaN nas colunas críticas após a conversão
@@ -80,6 +85,8 @@ def filter_irrelevant_treatments(df):
         "T3 (Initial)",
         "T4 (Initial)"
     ]
+    # Certifique-se de que a coluna 'Treatment' é do tipo string para a comparação
+    df['Treatment'] = df['Treatment'].astype(str)
     df_filtered = df[~df['Treatment'].isin(tratamentos_excluir)].copy()
     print(f"After filtering irrelevant treatments (identical to R script): {len(df_filtered)} rows.") # Log
     return df_filtered
@@ -102,7 +109,7 @@ def define_groups_and_residues(df):
     print(f"After assigning Group (Control/Treatment): {len(df)} rows.") # Log
     print(f"Group counts: {df['Group'].value_counts().to_dict()}") # Log
     
-    # --- CORREÇÃO AQUI: Criar a coluna 'Residue' baseada na coluna 'Study' ---
+    # Criar a coluna 'Residue' baseada na coluna 'Study', replicando a lógica do R
     def assign_residue_from_study(row):
         study = row['Study']
         if "Ramos et al. (2024)" == study:
@@ -123,11 +130,13 @@ def define_groups_and_residues(df):
     print(f"Residue type counts: {df['Residue'].value_counts().to_dict()}") # Log
 
     # Atribuir tipo de resíduo (agora usando a coluna 'Residue' recém-criada)
+    # Lógica ligeiramente expandida para incluir 'banana' e 'coconut' explicitamente,
+    # caso não sejam pegos por 'fruit' ou 'vegetable' e para 'urban' em industrial waste.
     def assign_residue_type(row):
         residue = str(row['Residue']).lower()
         if 'sewage' in residue or 'sludge' in residue or 'municipal' in residue or 'waste' in residue or 'industrial' in residue or 'brewery' in residue or 'distillery' in residue or 'urban' in residue: # Adicionado 'urban'
             return 'Sewage Sludge/Industrial Waste'
-        elif 'grape' in residue or 'fruit' in residue or 'vegetable' in residue or 'pineapple' in residue or 'coffee' in residue or 'sugarcane' in residue or 'paddy' in residue or 'rice' in residue or 'corn' in residue or 'leaf' in residue or 'agro-waste' in residue or 'livestock' in residue or 'manure' in residue or 'straw' in residue or 'abacaxi' in residue or 'banana' in residue or 'coconut' in residue: # Adicionado 'banana', 'coconut'
+        elif 'grape' in residue or 'fruit' in residue or 'vegetable' in residue or 'pineapple' in residue or 'coffee' in residue or 'sugarcane' in residue or 'paddy' in residue or 'rice' in residue or 'corn' in residue or 'leaf' in residue or 'agro-waste' in residue or 'livestock' in residue or 'manure' in residue or 'straw' in residue or 'abacaxi' in residue or 'banana' in residue or 'coconut' in residue: # Adicionado 'banana', 'coconut', e lembrando de 'abacaxi'
             return 'Agricultural Residue'
         elif 'paper' in residue or 'wood' in residue or 'lignin' in residue:
             return 'Paper/Wood Waste'
@@ -156,7 +165,7 @@ def prepare_for_meta_analysis(df_groups):
     df_groups_filtered_by_control_var = df_groups[df_groups['Variable'].isin(variables_with_control)]
     print(f"After filtering for variables with controls: {len(df_groups_filtered_by_control_var)} rows.") # Log
 
-    # Iterar sobre cada estudo e variável
+    # Iterar sobre cada estudo e variável para encontrar pares Controle-Tratamento
     # Agrupamos por 'Study', 'Variable' e 'Residue_Type'
     grouped_data = df_groups_filtered_by_control_var.groupby(['Study', 'Variable', 'Residue_Type'])
     print(f"Number of unique Study-Variable-Residue_Type groups: {len(grouped_data)}") # Log
@@ -168,9 +177,9 @@ def prepare_for_meta_analysis(df_groups):
         if not control_data.empty and not treatment_data.empty:
             control_mean = control_data['Mean'].iloc[0]
             control_sd = control_data['Std_Dev'].iloc[0]
-            # Assumindo N=10 se não houver coluna N ou ela estiver vazia.
-            # Se 'N' for uma coluna que pode existir, mas está vazia/NaN, precisamos de um default.
-            # Verifique se 'N' existe e se o valor é válido.
+            # Assumindo N=10 se não houver coluna N ou ela estiver vazia, ou se houver 'N', usar o valor.
+            # No R, n() é o número de observações no grupo. Se 'N' não existe ou é NaN, 
+            # estamos usando um valor padrão de 10.
             control_n = control_data['N'].iloc[0] if 'N' in control_data.columns and pd.notna(control_data['N'].iloc[0]) else 10
 
             for index, row in treatment_data.iterrows():
@@ -178,12 +187,16 @@ def prepare_for_meta_analysis(df_groups):
                 treatment_sd = row['Std_Dev']
                 treatment_n = row['N'] if 'N' in treatment_data.columns and pd.notna(row['N']) else 10
 
+                # Lidar com Mean == 0 para evitar log(0) ou divisão por zero
                 if control_mean == 0:
                     control_mean = 0.001
                 if treatment_mean == 0:
                     treatment_mean = 0.001
 
                 lnRR = np.log(treatment_mean / control_mean)
+                # A fórmula para var_lnRR no R usa n() (que é o número de observações).
+                # Aqui, n() seria o número de réplicas para aquela média específica.
+                # Se 'N' representa isso, usaremos 'N'. Se não, o 10 padrão.
                 var_lnRR = (treatment_sd**2 / (treatment_n * treatment_mean**2)) + \
                            (control_sd**2 / (control_n * control_mean**2))
 
@@ -198,7 +211,7 @@ def prepare_for_meta_analysis(df_groups):
                     'Treatment_N': treatment_n,
                     'Control_N': control_n
                 })
-        # else: # Se quiser depurar grupos que não formam pares, descomente
+        # else: # Se quiser depurar grupos que não formam pares, descomente estas linhas
         #     if control_data.empty:
         #         print(f"Warning: No control data for Study: {study}, Variable: {variable}, Residue_Type: {residue_type}")
         #     if treatment_data.empty:
@@ -221,6 +234,7 @@ def run_meta_analysis_and_plot(data, model_type="Residue"):
     pelo método de regressão. Para heterogeneidade, seriam necessários cálculos adicionais.
     """
     if data.empty:
+        print(f"Cannot run meta-analysis for {model_type}: input data is empty.")
         return pd.DataFrame(), None
 
     data = sm.add_constant(data, has_constant='add')
@@ -231,7 +245,7 @@ def run_meta_analysis_and_plot(data, model_type="Residue"):
         if len(data['Residue_Type'].unique()) > 1:
             model = sm.WLS.from_formula(formula, data=data, weights=1/data['var_lnRR'])
         else:
-            print("Warning: Only one residue type found, cannot run regression by Residue Type.")
+            print(f"Warning: Only one residue type ({data['Residue_Type'].unique()[0]}) found, cannot run regression by Residue Type.")
             return pd.DataFrame(), None
             
     elif model_type == "Variable":
@@ -239,7 +253,7 @@ def run_meta_analysis_and_plot(data, model_type="Residue"):
         if len(data['Variable'].unique()) > 1:
             model = sm.WLS.from_formula(formula, data=data, weights=1/data['var_lnRR'])
         else:
-            print("Warning: Only one variable type found, cannot run regression by Variable.")
+            print(f"Warning: Only one variable ({data['Variable'].unique()[0]}) found, cannot run regression by Variable.")
             return pd.DataFrame(), None
 
     elif model_type == "Interaction":
@@ -266,8 +280,11 @@ def run_meta_analysis_and_plot(data, model_type="Residue"):
 
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.axvline(x=0, linestyle="dashed", color="red")
+    # Para o gráfico de coeficientes, precisamos dos termos reais, não do intercepto 'const'
+    # ou os termos 'C(Residue_Type)[T.<categoria>]'
     plot_data = summary_df[~summary_df['term'].str.contains('Intercept|C\(', na=False)]
     
+    # Se, por algum motivo, não houver termos além do intercepto (e C()), ainda podemos plotar o 'const'
     if plot_data.empty and not summary_df.empty:
         plot_data = summary_df[summary_df['term'] == 'const']
 
