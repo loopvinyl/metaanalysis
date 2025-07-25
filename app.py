@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import meta_analysis as ma # Importa seu módulo com as funções de análise
+import meta_analysis as ma 
 import os
 
 # --- Configurações da Página Streamlit ---
@@ -23,21 +23,17 @@ st.markdown("""
 </a>
 """, unsafe_allow_html=True)
 
-st.info("View Study Selection Process") # Pode ser expandido para mostrar mais detalhes ou um modal
+st.info("View Study Selection Process") 
 
-# Define o caminho do arquivo de dados (agora apontando para o CSV)
-file_path = "https://raw.githubusercontent.com/loopvinyl/metaanalysis/main/data/csv.csv"
-dados_preparados = ma.load_and_prepare_data(file_path)
-
-
-# Carregar e preparar os dados usando a função do meta_analysis.py
-st.write(f"Loading data from: '{file_path}'")
+# A mensagem de "Loading data from:" pode ser ajustada, pois não estamos lendo de um arquivo
+st.write("Loading data directly from embedded code...")
 
 # Adiciona um placeholder para a mensagem de status de carregamento
 status_message = st.empty()
 
 try:
-    dados_preparados = ma.load_and_prepare_data(file_path)
+    # A chamada da função não precisa mais do argumento file_path
+    dados_preparados = ma.load_and_prepare_data() 
 
     if not dados_preparados.empty:
         status_message.success("Data prepared for meta-analysis. "
@@ -56,11 +52,11 @@ try:
 
     else:
         status_message.error(
-            f"Could not load or process data from '{file_path}'. Please check the file format or content."
+            f"Could not load or process data from embedded code. Please check the data format or content within the script."
         )
 except Exception as e:
     status_message.error(f"An unexpected error occurred during data loading: {e}")
-    dados_preparados = pd.DataFrame() # Garante que dados_preparados seja um DataFrame vazio em caso de erro
+    dados_preparados = pd.DataFrame() 
 
 # --- Seção 2: Rodar Modelos de Meta-Análise e Gerar Gráficos ---
 st.header("2. Run Meta-Analysis Models & Generate Plots")
@@ -81,7 +77,7 @@ if not dados_preparados.empty:
     else:
         st.warning(f"Could not generate plot for {model_choice} model. Check data or model choice.")
 else:
-    st.warning("Data could not be loaded or processed. Please check the 'data/csv.csv' file.")
+    st.warning("Data could not be loaded or processed. Please check the embedded data in `meta_analysis.py`.")
 
 
 # --- Seção 3: Gráficos Adicionais ---
