@@ -31,17 +31,17 @@ file_path_to_process = os.path.join("data", "csv.csv") # Always try to load this
 
 if os.path.exists(file_path_to_process):
     st.info(f"Loading data from: '{file_path_to_process}'")
-    
+
     # --- Data Processing Pipeline ---
     dados_raw = load_and_prepare_data(file_path_to_process) # Renamed to dados_raw for clarity
-    
+
     if not dados_raw.empty:
-        total_initial_records = len(dados_raw) # Get initial count
-        
+        total_initial_records = len(dados_raw)
+
         dados_filtrados = filter_irrelevant_treatments(dados_raw)
         dados_grupos = define_groups_and_residues(dados_filtrados)
         dados_meta_analysis = prepare_for_meta_analysis(dados_grupos)
-        
+
         if dados_meta_analysis.empty:
             st.warning("Not enough data to perform meta-analysis after filtering and preparation. Please check the data file.")
         else:
@@ -64,7 +64,7 @@ else:
     st.info("The application requires this file to run.")
 
 
-st.markdown("---")
+st.markdown("---") # Separador após a seção de carregamento de dados
 
 # --- PRISMA Flow Diagram Section ---
 st.header("PRISMA 2020 Flow Diagram")
@@ -122,10 +122,10 @@ with st.expander("View Study Selection Process"):
     ```
     """)
 
-st.markdown("---")
+st.markdown("---") # Separador após a seção PRISMA
 
 # --- Meta-Analysis Section ---
-st.header("2. Run Meta-Analysis Models & Generate Plots")
+st.header("2. Run Meta-Analysis Models & Generate Plots") # Este título mantém o "2." pois o PRISMA não é uma "etapa" da análise de dados do app, mas sim uma explicação do processo de seleção dos dados
 
 if not dados_meta_analysis.empty:
     st.markdown("Select a model to run and visualize its results. All plots and outputs are in English.")
@@ -191,9 +191,3 @@ if not dados_meta_analysis.empty:
                     st.pyplot(fig_funnel)
                 else:
                     st.warning("Could not generate Funnel Plot. Check data sufficiency.")
-
-else:
-    st.info("Data could not be loaded or processed. Please check the 'data/csv.csv' file.")
-
-st.markdown("---")
-st.markdown("Developed using Streamlit and Python for meta-analysis of vermicompost quality.")
