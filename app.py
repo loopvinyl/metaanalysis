@@ -33,9 +33,12 @@ if os.path.exists(file_path_to_process):
     st.info(f"Loading data from: '{file_path_to_process}'")
     
     # --- Data Processing Pipeline ---
-    dados = load_and_prepare_data(file_path_to_process)
-    if not dados.empty:
-        dados_filtrados = filter_irrelevant_treatments(dados)
+    dados_raw = load_and_prepare_data(file_path_to_process) # Renamed to dados_raw for clarity
+    
+    if not dados_raw.empty:
+        total_initial_records = len(dados_raw) # Get initial count
+        
+        dados_filtrados = filter_irrelevant_treatments(dados_raw)
         dados_grupos = define_groups_and_residues(dados_filtrados)
         dados_meta_analysis = prepare_for_meta_analysis(dados_grupos)
         
@@ -45,12 +48,79 @@ if os.path.exists(file_path_to_process):
             st.success(f"Data prepared for meta-analysis. {len(dados_meta_analysis)} records available.")
             st.subheader("Prepared Data Sample:")
             st.dataframe(dados_meta_analysis.head())
+
+            st.markdown(f"""
+            **Note on Data Filtering:**
+            The initial dataset contained **{total_initial_records}** records.
+            During preparation, records were filtered to include only relevant vermicompost treatments,
+            exclude initial/raw material samples, ensure the presence of control groups for variables,
+            and remove any entries with missing or invalid data for meta-analysis calculations.
+            This process resulted in **{len(dados_meta_analysis)}** records for the meta-analysis.
+            """)
     else:
         st.error(f"Could not load or process data from '{file_path_to_process}'. Please check the file format or content.")
 else:
     st.error(f"Error: Default data file '{file_path_to_process}' not found in the repository. Please ensure it is present.")
     st.info("The application requires this file to run.")
 
+
+st.markdown("---")
+
+# --- PRISMA Flow Diagram Section ---
+st.header("PRISMA 2020 Flow Diagram")
+
+with st.expander("View Study Selection Process"):
+    st.markdown("""
+    Here's the adapted PRISMA 2020 flow diagram illustrating the study selection process:
+
+    ```
+    Identification of studies via databases and registers
+    ----------------------------------------------------
+
+    Records removed before screening:
+    - Duplicate records removed (n = 1)
+    - Records marked as ineligible by automation tools (n = 0)
+    - Records removed for other reasons (n = 0)
+
+    Records identified from*:
+    - Databases (n = 125)
+        - Scopus (n = 48)
+        - Web of Science (n = 8)
+        - PubMed (n = 69)
+    - Registers (n = 0)
+
+    Identification
+    --------------
+
+    Records screened (n = 124)
+
+    Records excluded**:
+    - Missing key variables (pH, CE, TOC/MO, P, K, N, C/N) (n = 117)
+    - Non-primary literature (reviews/book chapters) (n = 2)
+
+    Reports sought for retrieval (n = 5)
+
+    Reports not retrieved (n = 0)
+
+    Screening
+    ---------
+
+    Reports assessed for eligibility (n = 5)
+
+    Reports excluded:
+    - Insufficient data reporting (n = 0)
+    - Other reasons (n = 0)
+
+    Studies included in review (n = 5)
+
+    Reports of included studies:
+    - Ramos et al. (2024)
+    - Kumar et al. (2023)
+    - Quadar et al. (2022)
+    - Srivastava et al. (2020)
+    - Santana et al. (2020)
+    ```
+    """)
 
 st.markdown("---")
 
