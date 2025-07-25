@@ -1,61 +1,114 @@
 import streamlit as st
-import meta_analysis as ma
+import pandas as pd
+import meta_analysis as ma # Importa seu módulo com as funções de análise
+import os
 
-st.set_page_config(page_title="🌱 Vermicompost Meta-Analysis", layout="wide")
+# --- Configurações da Página Streamlit ---
+st.set_page_config(
+    page_title="Meta-análise de Vermicompostagem",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 st.title("🌱 Vermicompost Meta-Analysis: Effect of Different Residues")
-st.markdown("""
-This application performs a meta-analysis to evaluate the effect of different residues on vermicompost quality, using pre-loaded example data from the repository.
-""")
+st.markdown("This application performs a meta-analysis to evaluate the effect of different residues on vermicompost quality, using pre-loaded example data from the repository.")
 
-# 1. Loading Data
+# --- Seção 1: Carregamento e Preparação dos Dados ---
 st.header("1. Loading Data")
-st.markdown("**PRISMA 2020 Flow Diagram**  \nView Study Selection Process")
 
-# Caminho para o CSV no GitHub
-file_path = "https://raw.githubusercontent.com/loopvinyl/metaanalysis/main/data/csv.csv"
-st.write(f"Loading data from: {file_path}")
+# Link para o diagrama PRISMA (se aplicável, ajuste o URL se necessário)
+st.markdown("""
+<a href="https://example.com/prisma_diagram.png" target="_blank">
+    PRISMA 2020 Flow Diagram
+</a>
+""", unsafe_allow_html=True)
 
-# Carrega e prepara os dados
-dados_preparados = ma.load_and_prepare_data(file_path)
+st.info("View Study Selection Process") # Pode ser expandido para mostrar mais detalhes ou um modal
 
-if dados_preparados.empty:
-    st.error("Could not load or process data from the GitHub CSV. Please check the file format or content.")
-    st.stop()
-else:
-    st.success("Data loaded and processed successfully!")
-    st.dataframe(dados_preparados)
+# Define o caminho do arquivo de dados para exibição (mas a leitura interna será 'csv.csv')
+display_file_path = "csv.csv"
 
-# 2. Meta-analysis section
+# Carregar e preparar os dados usando a função do meta_analysis.py
+st.write(f"Loading data from: '{display_file_path}'") # Mensagem de carregamento ajustada
+
+# Adiciona um placeholder para a mensagem de status de carregamento
+status_message = st.empty()
+
+try:
+    # A chamada da função load_and_prepare_data não precisa de argumentos agora,
+    # pois o caminho do arquivo está fixo dentro dela.
+    dados_preparados = ma.load_and_prepare_data()
+
+    if not dados_preparados.empty:
+        status_message.success("Data prepared for meta-analysis. "
+                               f"{len(dados_preparados)} records available.")
+        st.subheader("Prepared Data Sample:")
+        st.dataframe(dados_preparados.head())
+
+        st.info(
+            f"Note on Data Filtering: The initial dataset contained **{len(dados_preparados)}** records "
+            "after initial load and numeric conversion. During preparation, records were filtered to include "
+            "only relevant vermicompost treatments, exclude initial/raw material samples, ensure the presence "
+            "of control groups for variables, and remove any entries with missing or invalid data for "
+            "meta-analysis calculations. This process resulted in **{len(dados_preparados)}** records for the meta-analysis. "
+            "The exact number after all filtering steps (e.g., control group presence) is reflected in the logs."
+        )
+
+    else:
+        status_message.error(
+            f"Could not load or process data from '{display_file_path}'. Please check the file format or content."
+        )
+except Exception as e:
+    status_message.error(f"An unexpected error occurred during data loading: {e}")
+    dados_preparados = pd.DataFrame() # Garante que dados_preparados seja um DataFrame vazio em caso de erro
+
+# --- Seção 2: Rodar Modelos de Meta-Análise e Gerar Gráficos ---
 st.header("2. Run Meta-Analysis Models & Generate Plots")
 
-variaveis = dados_preparados['Variable'].unique()
-tratamentos = dados_preparados['Treatment'].unique()
+if not dados_preparados.empty:
+    model_choice = st.selectbox(
+        "Select a model to run and visualize its results. All plots and outputs are in English.",
+        ("Residue", "Variable", "Interaction")
+    )
 
-variavel_escolhida = st.selectbox("Select variable", variaveis)
-tratamento_escolhido = st.selectbox("Select treatment group", tratamentos)
-modelo = st.radio("Choose meta-analysis model", ['random', 'fixed'])
+    summary_df, fig = ma.run_meta_analysis_and_plot(dados_preparados, model_type=model_choice)
 
-resultado, erro = ma.rodar_meta_analise(dados_preparados, variavel_escolhida, tratamento_escolhido, modelo)
-
-if erro:
-    st.error(erro)
+    if fig:
+        st.pyplot(fig)
+        if not summary_df.empty:
+            st.subheader(f"Summary Table for {model_choice} Model:")
+            st.dataframe(summary_df)
+    else:
+        st.warning(f"Could not generate plot for {model_choice} model. Check data or model choice.")
 else:
-    st.success("Meta-analysis completed.")
-    efeito, variancia = resultado[0], resultado[1]
-    st.markdown(f"**Combined Effect (SMD):** `{efeito:.3f}`")
-    st.markdown(f"**Variance:** `{variancia:.4f}`")
+    st.warning("Data could not be loaded or processed. Please ensure 'csv.csv' is in the root directory.")
 
-    fig = ma.gerar_forest_plot(resultado, resultado.effects, resultado.variances, f"{variavel_escolhida} ({modelo.title()} Effects)")
-    st.pyplot(fig)
 
-# 3. Additional Plots
+# --- Seção 3: Gráficos Adicionais ---
 st.header("3. Additional Plots")
-if dados_preparados.empty:
-    st.warning("Cannot generate additional plots. Data was not loaded or processed correctly.")
-else:
-    st.info("Additional visualizations coming soon!")
 
-# Footer
+if not dados_preparados.empty:
+    plot_choice = st.selectbox(
+        "Select an additional plot to generate:",
+        ("Forest Plot", "Funnel Plot")
+    )
+
+    if plot_choice == "Forest Plot":
+        forest_fig = ma.generate_forest_plot(dados_preparados)
+        if forest_fig:
+            st.pyplot(forest_fig)
+        else:
+            st.warning("Could not generate Forest Plot. Data might be insufficient or invalid.")
+    elif plot_choice == "Funnel Plot":
+        funnel_fig = ma.generate_funnel_plot(dados_preparados)
+        if funnel_fig:
+            st.pyplot(funnel_fig)
+        else:
+            st.warning("Could not generate Funnel Plot. Data might be insufficient or invalid.")
+else:
+    st.warning("Cannot generate additional plots. Data was not loaded or processed correctly.")
+
+
+# --- Rodapé ---
 st.markdown("---")
-st.caption("Developed using Streamlit and Python for meta-analysis of vermicompost quality.")
+st.markdown("Developed using Streamlit and Python for meta-analysis of vermicompost quality.")
