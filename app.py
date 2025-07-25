@@ -9,8 +9,7 @@ from meta_analysis import (
     prepare_for_meta_analysis,
     run_meta_analysis_and_plot,
     generate_forest_plot,
-    generate_funnel_plot,
-    run_analysis_by_variable
+    generate_funnel_plot
 )
 
 # --- App Configuration ---
@@ -32,6 +31,7 @@ dados_meta_analysis = pd.DataFrame() # Initialize empty DataFrame
 
 if uploaded_file is not None:
     # Save the uploaded file to the 'data' directory
+    # (or directly process if preferred, but saving helps for consistency with local setup)
     if not os.path.exists("data"):
         os.makedirs("data")
     
@@ -128,19 +128,6 @@ if not dados_meta_analysis.empty:
                     st.pyplot(fig_funnel)
                 else:
                     st.warning("Could not generate Funnel Plot. Check data sufficiency.")
-
-    st.markdown("---")
-    st.header("4. Analysis by Important Variables")
-    
-    if st.button("📊 Analyze TOC, N, pH, EC"):
-        st.subheader("Analysis by Important Variables")
-        with st.spinner("Calculating..."):
-            results = run_analysis_by_variable(dados_meta_analysis)
-            for var, result in results.items():
-                if result:
-                    st.subheader(f"Analysis for {var}")
-                    st.pyplot(result['plot'])
-                    st.dataframe(result['summary'].set_index('term'))
 
 else:
     st.info("Please upload data and ensure it's successfully processed before running analyses.")
