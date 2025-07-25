@@ -88,7 +88,8 @@ st.markdown("---") # Separador após a seção PRISMA, ainda dentro do contexto 
 
 # --- Data Loading Logic (now comes after PRISMA within section 1) ---
 dados_meta_analysis = pd.DataFrame() # Initialize empty DataFrame
-file_path_to_process = os.path.join("data", "csv.csv") # Always try to load this file
+# ALTERAÇÃO AQUI: Mude de csv.csv para excel.xlsx
+file_path_to_process = os.path.join("data", "excel.xlsx") # Caminho para o novo arquivo Excel
 
 if os.path.exists(file_path_to_process):
     st.info(f"Loading data from: '{file_path_to_process}'")
@@ -196,7 +197,7 @@ if not dados_meta_analysis.empty:
                     st.warning("Could not generate Funnel Plot. Check data sufficiency.")
 
 else:
-    st.info("Data could not be loaded or processed. Please check the 'data/csv.csv' file.")
+    st.info("Data could not be loaded or processed. Please check the 'data/excel.xlsx' file.") # Atualizado para Excel
 
 st.markdown("---")
 st.markdown("Developed using Streamlit and Python for meta-analysis of vermicompost quality.")
