@@ -26,22 +26,19 @@ using pre-loaded example data from the repository.
 # --- Data Loading Section (including PRISMA) ---
 st.header("1. Loading Data")
 
-# --- PRISMA Flow Diagram Section (MOVED HERE) ---
-# Note: Using st.subheader for PRISMA title to make it a sub-part of "1. Loading Data"
+# --- PRISMA Flow Diagram Section ---
 st.subheader("PRISMA 2020 Flow Diagram")
 
 with st.expander("View Study Selection Process"):
     st.markdown("""
     Here's the adapted PRISMA 2020 flow diagram illustrating the study selection process:
 
-    ```
-    Identification of studies via databases and registers
-    ----------------------------------------------------
+    **Search Strategy:**
+    The following search terms were used in **SCOPUS, Web of Science, and PubMed** databases:
+    `"vermicomposting" AND ( "characterization of vermicompost" OR "Chemical and physical variables" OR "Physico-chemical characterization" OR "Nutrient dynamics" )`
 
-    Records removed before screening:
-    - Duplicate records removed (n = 1)
-    - Records marked as ineligible by automation tools (n = 0)
-    - Records removed for other reasons (n = 0)
+    **Identification of studies via databases and registers**
+    ----------------------------------------------------
 
     Records identified from*:
     - Databases (n = 125)
@@ -49,6 +46,11 @@ with st.expander("View Study Selection Process"):
         - Web of Science (n = 8)
         - PubMed (n = 69)
     - Registers (n = 0)
+
+    Records removed before screening:
+    - Duplicate records removed (n = 1)
+    - Records marked as ineligible by automation tools (n = 0)
+    - Records removed for other reasons (n = 0)
 
     Identification
     --------------
@@ -80,7 +82,6 @@ with st.expander("View Study Selection Process"):
     - Quadar et al. (2022)
     - Srivastava et al. (2020)
     - Santana et al. (2020)
-    ```
     """)
 
 st.markdown("---") # Separador após a seção PRISMA, ainda dentro do contexto de carregamento de dados
