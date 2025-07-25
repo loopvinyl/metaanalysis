@@ -150,8 +150,6 @@ def prepare_for_meta_analysis(dados_grupos):
     
     # Based on the R code, `n()` likely refers to the count of observations *within that specific row/study contribution to the model*.
     # If `n()` is simply 1 for each row in R, then the formula simplifies to (SD_adj^2 / Mean^2) + (SD_control^2 / Mean_control^2).
-    # Let's assume n=1 per observation as implied by the R code given the input data structure.
-    # The user's R code used `n()` within the mutate, which in `dplyr` context with no explicit group_by would be 1 for each row.
     
     dados_meta['var_lnRR'] = (dados_meta['Std_Dev_adj']**2 / dados_meta['Mean']**2) + \
                              (dados_meta['Std_Dev_control']**2 / dados_meta['Mean_control']**2)
