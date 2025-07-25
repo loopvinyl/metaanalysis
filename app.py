@@ -21,8 +21,10 @@ st.set_page_config(layout="wide", page_title="Vermicompost Meta-Analysis")
 st.title("🌱 Vermicompost Meta-Analysis: Effect of Different Residues")
 
 st.markdown("""
-This application performs a meta-analysis to evaluate the effect of different organic residues on vermicompost quality.
-It automatically loads data from `csv.csv` and performs analysis using weighted regression models (WLS) to estimate log-response ratios (lnRR).
+This application performs a meta-analysis to evaluate the effect of different
+organic residues on vermicompost quality.
+It automatically loads data from `csv.csv` and performs analysis using weighted
+regression models (WLS) to estimate log-response ratios (lnRR).
 """)
 
 # --- New Section: 1. PRISMA Flow Diagram ---
@@ -68,11 +70,10 @@ Consequently, **5 studies were deemed eligible and included** in the final syste
 * Quadar et al. (2022)
 * Srivastava et al. (2020)
 * Santana et al. (2020)
-
-This systematic approach ensured that only highly relevant and high-quality studies, providing the necessary data for the intended meta-analysis, were included.
 """)
 
----
+# Place the markdown horizontal line within st.markdown()
+st.markdown("---")
 
 # --- Renumbered Section: 2. Data Loading and Preparation ---
 st.header("2. Data Loading and Preparation")
@@ -104,7 +105,8 @@ if os.path.exists(file_path):
 else:
     st.error("❌ File 'csv.csv' not found in the same directory as 'app.py'. Please place it there and reload the app.")
 
----
+# Place the markdown horizontal line within st.markdown()
+st.markdown("---")
 
 # --- Renumbered Section: 3. Meta-Analysis Modeling and Visualization ---
 st.header("3. Meta-Analysis Modeling and Visualization")
@@ -146,7 +148,7 @@ if not dados_meta_analysis.empty and len(dados_meta_analysis) >= 2: # At least 2
     st.dataframe(interaction_model_summary_df)
 
     # --- Save Results ---
-    # Removido o cabeçalho e a lógica de salvamento.
+    # Removed the header and saving logic.
     # st.header("4. Save Results")
     # try:
     #    # Saving results (models and data)
@@ -164,7 +166,8 @@ if not dados_meta_analysis.empty and len(dados_meta_analysis) >= 2: # At least 2
 else:
     st.info("Please ensure 'csv.csv' is in the same directory as 'app.py' and processed successfully (with at least 2 records) to proceed with the analysis.")
 
----
+# Place the markdown horizontal line within st.markdown()
+st.markdown("---")
 
 # --- Renumbered Section: 4. Diagnostic and Additional Analyses ---
 st.header("4. Diagnostic and Additional Analyses")
