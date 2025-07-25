@@ -4,7 +4,7 @@ This Streamlit application performs a meta-analysis to assess the effect of diff
 
 ## Features
 
-* **Automatic Data Loading:** Reads `csv.csv` directly from the `data/` directory.
+* **Automatic Data Loading:** Reads `csv.csv` directly from the same directory as `app.py`.
 * **Data Preparation:** Cleans and transforms raw data, including renaming columns, converting types, filtering irrelevant treatments, and defining control/treatment groups and residue types.
 * **Meta-Analysis Models:**
     * Model by Residue Type
@@ -30,7 +30,7 @@ Ensure you have Python installed (version 3.8 or higher is recommended).
     git clone <your-repository-url>
     cd vermicompost-meta
     ```
-    Otherwise, create a directory (e.g., `vermicompost-meta`) and place all the provided files (`app.py`, `meta_analysis.py`, `requirements.txt`, `README.md`, and the `data/` directory with `csv.csv` inside) into it.
+    Otherwise, create a directory (e.g., `vermicompost-meta`) and place all the provided files (`app.py`, `meta_analysis.py`, `requirements.txt`, `README.md`, and `csv.csv`) directly into it.
 
 2.  **Create a Virtual Environment (Recommended):**
     ```bash
@@ -49,5 +49,5 @@ Ensure you have Python installed (version 3.8 or higher is recommended).
 
 ### Data Setup
 
-**Crucial Step:** Place your dataset named `csv.csv` inside a subdirectory named `data/` within your project root.
-Your project structure should look like this:
+**Crucial Step:** Place your dataset named `csv.csv` in the **same directory** as your `app.py` file.
+Your project structure should now look like this:
