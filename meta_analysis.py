@@ -40,8 +40,10 @@ def load_and_prepare_data(file_path):
 def filter_irrelevant_treatments(dados):
     """
     Filters out irrelevant treatments from the dataset.
+
     Args:
         dados (pandas.DataFrame): The input DataFrame.
+
     Returns:
         pandas.DataFrame: The DataFrame with irrelevant treatments filtered out.
     """
@@ -64,8 +66,10 @@ def filter_irrelevant_treatments(dados):
 def define_groups_and_residues(dados_filtrados):
     """
     Defines 'Control' vs. 'Treatment' groups and 'Residue' types.
+
     Args:
         dados_filtrados (pandas.DataFrame): The filtered DataFrame.
+
     Returns:
         pandas.DataFrame: The DataFrame with 'Group' and 'Residue' columns.
     """
@@ -84,13 +88,16 @@ def define_groups_and_residues(dados_filtrados):
     # Add remembered information: 'abacaxi' to 'Resíduos Agrícolas' -> 'Pineapple' to 'Agricultural Residues'
     dados_grupos.loc[dados_grupos['Treatment'].str.contains('Pineapple', na=False, case=False), 'Residue'] = 'Agricultural Residue'
 
+
     return dados_grupos
 
 def prepare_for_meta_analysis(dados_grupos):
     """
     Prepares data for meta-analysis by calculating Log Response Ratio (lnRR) and its variance.
+
     Args:
         dados_grupos (pandas.DataFrame): The DataFrame with groups and residues defined.
+
     Returns:
         pandas.DataFrame: The DataFrame ready for meta-analysis.
     """
@@ -118,300 +125,175 @@ def prepare_for_meta_analysis(dados_grupos):
     dados_meta = dados_meta[
         (dados_meta['Mean_control'] > 0) & (dados_meta['Mean'] > 0)
     ].copy()
+
     dados_meta['lnRR'] = np.log(dados_meta['Mean'] / dados_meta['Mean_control'])
     
     # Variance of lnRR calculation:
     # (Std_Dev_treatment^2 / (N_treatment * Mean_treatment^2)) + (Std_Dev_control^2 / (N_control * Mean_control^2))
-    # Assuming N_treatment and N_control are 1 as per the R script's n() context for individual observations
+    # Assuming N_treatment and N_control are represented by n() in R, which refers to number of observations.
+    # For now, we'll assume a single observation per group in the original data structure for calculation,
+    # as the R code uses `n()` which in this context usually means 1 for individual studies.
+    # If your data has actual sample sizes (n) for Mean and Std_Dev, these should be used instead of 1.
     dados_meta['var_lnRR'] = (dados_meta['Std_Dev_adj']**2 / (1 * dados_meta['Mean']**2)) + \
                              (dados_meta['Std_Dev_control']**2 / (1 * dados_meta['Mean_control']**2))
-
+    
     # Filter out rows with NaN or infinite values in lnRR or var_lnRR
     dados_meta = dados_meta.replace([np.inf, -np.inf], np.nan).dropna(subset=['lnRR', 'var_lnRR'])
     
-    # Filter out rows where var_lnRR is zero or very close to zero, as this causes issues with weights
-    dados_meta = dados_meta[dados_meta['var_lnRR'] > 1e-10]
-
     return dados_meta
 
-
-def run_meta_analysis_and_plot(dados_meta):
+def run_meta_analysis_and_plot(dados_meta, model_type="Residue"):
     """
-    Executes meta-analysis models and generates plots.
+    Runs meta-analysis and generates a coefficient plot.
+
     Args:
-        dados_meta (pandas.DataFrame): The DataFrame prepared for meta-analysis.
+        dados_meta (pandas.DataFrame): Prepared data for meta-analysis.
+        model_type (str): Type of model to run ("Residue", "Variable", or "Interaction").
+
     Returns:
-        dict: A dictionary containing the results and plots.
+        tuple: A tuple containing (model_summary_df, fig) where model_summary_df is a
+               DataFrame of model coefficients and fig is the matplotlib figure.
     """
-    results = {}
+    if dados_meta.empty or len(dados_meta['Residue'].unique()) < 2:
+        return pd.DataFrame(), None # Not enough data for analysis
+
+    if model_type == "Residue":
+        formula = 'lnRR ~ C(Residue) - 1'
+        title = "Effect of Different Residues on Vermicompost"
+        x_label = "Effect Size (lnRR)"
+        y_label = "Residue Type"
+    elif model_type == "Variable":
+        formula = 'lnRR ~ C(Variable) - 1'
+        title = "Effect of Variables in Vermicompost"
+        x_label = "Effect Size (lnRR)"
+        y_label = "Variable"
+    elif model_type == "Interaction":
+        formula = 'lnRR ~ C(Residue):C(Variable) - 1'
+        title = "Interaction Effect of Residue × Variable"
+        x_label = "Effect Size (lnRR)"
+        y_label = "Residue:Variable Interaction"
+    else:
+        raise ValueError("Invalid model_type. Choose 'Residue', 'Variable', or 'Interaction'.")
+
+    # Weighted Least Squares for meta-analysis (approximation of rma in metafor)
+    # Weights are the inverse of the variance (1/vi)
+    dados_meta['weights'] = 1 / dados_meta['var_lnRR']
     
-    if dados_meta.empty:
-        print("Não há dados suficientes para a meta-análise após filtragem.")
-        return results
-
-    # Ensure weights are not zero or NaN
-    weights = 1 / dados_meta['var_lnRR']
-    weights = weights.replace([np.inf, -np.inf], np.nan).fillna(0) # Handle potential inf from 1/0
-    dados_meta = dados_meta[weights > 0].copy() # Filter data where weights are valid
-    weights = weights[weights > 0] # Re-filter weights
-
-    if dados_meta.empty:
-        print("Não há dados suficientes após a validação dos pesos.")
-        return results
-
-    # 6.1. Modelo por tipo de resíduo
     try:
-        # Use C() for categorical variables and -1 for no intercept
-        model_residue = smf.wls(
-            formula='lnRR ~ C(Residue) - 1', 
-            data=dados_meta, 
-            weights=weights
-        ).fit()
-        results['model_residue'] = model_residue
-        print("\n=== MODELO POR TIPO DE RESÍDUO ===\n")
-        print(model_residue.summary())
-        
-        # Generate Coefficient Plot for Residue Model
-        fig_coeff_residue = generate_coefficient_plot(model_residue, "Efeito de Resíduos no Vermicomposto", "Tipo de Resíduo")
-        results['coeff_plot_residue'] = fig_coeff_residue
-
+        model = smf.wls(formula, data=dados_meta, weights=dados_meta['weights']).fit()
     except Exception as e:
-        print(f"Erro ao executar o modelo por tipo de resíduo: {e}")
-        results['model_residue_error'] = str(e)
+        print(f"Error fitting model for {model_type}: {e}")
+        return pd.DataFrame(), None
 
-    # 6.2. Modelo por variável
-    try:
-        model_variable = smf.wls(
-            formula='lnRR ~ C(Variable) - 1', 
-            data=dados_meta, 
-            weights=weights
-        ).fit()
-        results['model_variable'] = model_variable
-        print("\n=== MODELO POR VARIÁVEL ===\n")
-        print(model_variable.summary())
-        
-        # Generate Coefficient Plot for Variable Model
-        fig_coeff_variable = generate_coefficient_plot(model_variable, "Efeito por Variável no Vermicomposto", "Variável")
-        results['coeff_plot_variable'] = fig_coeff_variable
+    # Extract coefficients and confidence intervals
+    summary_df = model.summary2().tables[1]
+    summary_df = summary_df.reset_index().rename(columns={'index': 'term'})
+    
+    # Rename 'term' column for clarity based on model type
+    if model_type == "Residue":
+        summary_df['term'] = summary_df['term'].str.replace('C(Residue)[T.', '', regex=False).str.replace(']', '', regex=False)
+    elif model_type == "Variable":
+        summary_df['term'] = summary_df['term'].str.replace('C(Variable)[T.', '', regex=False).str.replace(']', '', regex=False)
+    elif model_type == "Interaction":
+        summary_df['term'] = summary_df['term'].str.replace('C(Residue)[T.', '', regex=False) \
+                                               .str.replace(']:C(Variable)[T.', ':', regex=False) \
+                                               .str.replace(']', '', regex=False)
 
-    except Exception as e:
-        print(f"Erro ao executar o modelo por variável: {e}")
-        results['model_variable_error'] = str(e)
+    summary_df['lower'] = summary_df['Coef.'] - 1.96 * summary_df['Std.Err.']
+    summary_df['upper'] = summary_df['Coef.'] + 1.96 * summary_df['Std.Err.']
 
-    # 6.3. Modelo de interação (Resíduo × Variável)
-    try:
-        model_interaction = smf.wls(
-            formula='lnRR ~ C(Residue) * C(Variable) - 1', 
-            data=dados_meta, 
-            weights=weights
-        ).fit()
-        results['model_interaction'] = model_interaction
-        print("\n=== MODELO DE INTERAÇÃO (RESÍDUO × VARIÁVEL) ===\n")
-        print(model_interaction.summary())
-        
-        # Generate Coefficient Plot for Interaction Model (can be complex, might need filtering)
-        # fig_coeff_interaction = generate_coefficient_plot(model_interaction, "Efeito de Interação (Resíduo x Variável)", "Interação")
-        # results['coeff_plot_interaction'] = fig_coeff_interaction
+    # Create coefficient plot
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.pointplot(x='Coef.', y='term', data=summary_df, join=False, errorbar=None, ax=ax)
+    ax.hlines(y=summary_df['term'], xmin=summary_df['lower'], xmax=summary_df['upper'], color='grey')
+    ax.axvline(x=0, linetype="dashed", color="red")
+    ax.set_title(title)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ax.grid(True, linestyle='--', alpha=0.6)
+    plt.tight_layout()
 
-    except Exception as e:
-        print(f"Erro ao executar o modelo de interação: {e}")
-        results['model_interaction_error'] = str(e)
+    return summary_df, fig
 
-    # 7.1. Análise por variável específica (ex: TOC, N, pH)
-    important_vars = ["TOC", "N", "pH", "EC"]
-    results['specific_variable_models'] = {}
-    for var in important_vars:
-        print(f"\n=== ANÁLISE PARA A VARIÁVEL: {var} ===\n")
-        temp_data = dados_meta[dados_meta['Variable'] == var].copy()
-        temp_weights = weights[dados_meta['Variable'] == var].copy() # Filter weights accordingly
-        
-        if len(temp_data) > 1 and not temp_weights.empty:
-            try:
-                temp_model = smf.wls(
-                    formula='lnRR ~ C(Residue) - 1',
-                    data=temp_data,
-                    weights=temp_weights
-                ).fit()
-                results['specific_variable_models'][var] = temp_model
-                print(temp_model.summary())
-
-                # Forest plot for this specific variable
-                fig_forest_specific = generate_forest_plot(
-                    temp_data, temp_model, 
-                    title=f"Efeito do Resíduo em {var}", 
-                    slab_col='Residue'
-                )
-                results[f'forest_plot_{var}'] = fig_forest_specific
-
-            except Exception as e:
-                print(f"Erro ao executar o modelo para a variável {var}: {e}")
-                results['specific_variable_models'][var + '_error'] = str(e)
-        else:
-            print(f"Não há dados suficientes para a meta-análise para a variável {var} após filtragem.")
-
-    # 7.2. Diagnósticos (viés de publicação, heterogeneidade)
-    if 'model_residue' in results:
-        try:
-            fig_funnel = generate_funnel_plot(dados_meta, results['model_residue'])
-            results['funnel_plot'] = fig_funnel
-        except Exception as e:
-            print(f"Erro ao gerar o gráfico de funil: {e}")
-            results['funnel_plot_error'] = str(e)
-        
-        # Influence plot is complex to replicate generically without a meta-analysis package.
-        # It typically involves diagnostics like DFFITS, Cook's distance etc. for meta-analysis.
-        # For now, it's omitted as `statsmodels.wls` doesn't provide direct equivalents of `metafor::influence` plots easily.
-        # You could implement custom influence diagnostics if needed.
-
-    return results
-
-def generate_forest_plot(data, model, title="Forest Plot", slab_col='Residue'):
+def generate_forest_plot(dados_meta, title="Forest Plot"):
     """
-    Generates a forest plot for meta-analysis results.
+    Generates a simplified forest plot for individual studies.
+    Note: A full metafor-like forest plot is complex to replicate exactly.
+    This provides a simplified version.
+
     Args:
-        data (pandas.DataFrame): The DataFrame used for the model.
-        model (statsmodels.regression.linear_model.RegressionResultsWrapper): The fitted model.
-        title (str): Title of the plot.
-        slab_col (str): Column to use for labels in the forest plot.
-    Returns:
-        matplotlib.figure.Figure: The generated matplotlib figure.
-    """
-    fig, ax = plt.subplots(figsize=(10, len(data) * 0.4 + 2)) # Adjust figure size dynamically
-    
-    # Get coefficients and their standard errors
-    coefs = model.params
-    conf_int = model.conf_int() # Get confidence intervals
+        dados_meta (pandas.DataFrame): Prepared data for meta-analysis.
+        title (str): Title of the forest plot.
 
-    # Ensure data has a column for 'effect_size' and 'lower'/'upper' bounds
-    # For a simple forest plot, we need to plot each individual study's effect size.
-    # The 'data' DataFrame already contains 'lnRR' and 'var_lnRR'.
-    # We need to calculate individual CIs for 'lnRR' if we want to show all studies,
-    # or just show the model's aggregated effects if that's the intent.
-    # The R forest plot typically shows individual studies + summary.
-    # Here, we'll plot individual studies and then the aggregated model effects if desired.
+    Returns:
+        matplotlib.figure.Figure: The matplotlib figure for the forest plot.
+    """
+    if dados_meta.empty:
+        return None
+
+    # Sort data for better visualization
+    dados_meta = dados_meta.sort_values(by='lnRR')
+
+    fig, ax = plt.subplots(figsize=(10, len(dados_meta) * 0.4 + 2)) # Dynamic height
+    
+    # Plotting individual study effects
+    for i, row in dados_meta.iterrows():
+        label = f"{row['Residue']} - {row['Variable']} ({row['Study']})"
+        ci_lower = row['lnRR'] - 1.96 * np.sqrt(row['var_lnRR'])
+        ci_upper = row['lnRR'] + 1.96 * np.sqrt(row['var_lnRR'])
+        
+        ax.plot([ci_lower, ci_upper], [i, i], color='gray', linestyle='-', linewidth=1)
+        ax.plot(row['lnRR'], i, 's', color='blue', markersize=5)
+        ax.text(ax.get_xlim()[1] + 0.1, i, f"{row['lnRR']:.2f} [{ci_lower:.2f}, {ci_upper:.2f}]", va='center')
+        ax.text(ax.get_xlim()[0] - 0.1, i, label, va='center', ha='right')
+
+    ax.axvline(x=0, color='red', linestyle='--', linewidth=0.8) # Line at no effect
+
+    ax.set_yticks(range(len(dados_meta)))
+    ax.set_yticklabels([]) # Hide y-axis labels
+    ax.set_xlabel("Log Response Ratio (lnRR) [95% CI]")
+    ax.set_title(title)
+    ax.grid(True, linestyle='--', alpha=0.6, axis='x')
+    plt.tight_layout()
+    return fig
+
+def generate_funnel_plot(dados_meta):
+    """
+    Generates a funnel plot for publication bias.
+
+    Args:
+        dados_meta (pandas.DataFrame): Prepared data for meta-analysis.
+
+    Returns:
+        matplotlib.figure.Figure: The matplotlib figure for the funnel plot.
+    """
+    if dados_meta.empty:
+        return None
+
+    # Calculate standard error
+    dados_meta['se_lnRR'] = np.sqrt(dados_meta['var_lnRR'])
+
+    fig, ax = plt.subplots(figsize=(8, 8))
 
     # Plot individual studies
-    y_pos = np.arange(len(data))
-    
-    # Calculate individual study CIs for lnRR
-    data['lnRR_se'] = np.sqrt(data['var_lnRR'])
-    data['lnRR_lower'] = data['lnRR'] - 1.96 * data['lnRR_se']
-    data['lnRR_upper'] = data['lnRR'] + 1.96 * data['lnRR_se']
+    ax.scatter(dados_meta['lnRR'], dados_meta['se_lnRR'], color='blue', alpha=0.7)
 
-    # Sort data for better visualization in forest plot
-    data_sorted = data.sort_values(by='lnRR', ascending=True)
-    y_pos_sorted = np.arange(len(data_sorted))
+    # Add pseudo-confidence limits (assuming no effect, lnRR=0)
+    # These are illustrative lines, not true CIs for the meta-analysis effect
+    max_se = dados_meta['se_lnRR'].max()
+    x_vals = np.linspace(-max_se * 2, max_se * 2, 100) # Range for lnRR on x-axis
 
-    ax.errorbar(data_sorted['lnRR'], y_pos_sorted, 
-                xerr=[data_sorted['lnRR'] - data_sorted['lnRR_lower'], data_sorted['lnRR_upper'] - data_sorted['lnRR']],
-                fmt='o', capsize=5, color='gray', alpha=0.7, label='Individual Studies')
-    
-    # Add labels
-    ax.set_yticks(y_pos_sorted)
-    ax.set_yticklabels(data_sorted[slab_col] + " - " + data_sorted['Variable']) # Combine Residue and Variable for slab
+    # 95% CI lines
+    ax.plot(x_vals, np.abs(x_vals) / 1.96, color='grey', linestyle='--', label='95% CI')
+    ax.plot(x_vals, -np.abs(x_vals) / 1.96, color='grey', linestyle='--')
 
-    # Add vertical line at null effect (lnRR = 0)
-    ax.axvline(x=0, color='black', linestyle='--', linewidth=0.8)
+    ax.axvline(0, color='red', linestyle=':', label='No Effect (lnRR=0)') # Line of no effect
 
     ax.set_xlabel("Log Response Ratio (lnRR)")
-    ax.set_title(title)
-    ax.invert_yaxis() # Top study first
-    ax.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
-    
-    # Plot overall effect (if applicable, e.g., model_residue for specific residue)
-    # This part depends on how you want to present the summary.
-    # For a model with multiple coefficients (e.g., ~C(Residue)-1), you'd plot each coefficient.
-    # The 'generate_coefficient_plot' function is more suited for displaying model coefficients.
-    # This forest plot focuses on individual studies, so a single summary line might not be appropriate here for multi-coeff models.
-
-    plt.tight_layout()
-    return fig
-
-def generate_coefficient_plot(model, title="Coefficient Plot", y_label="Term"):
-    """
-    Generates a coefficient plot with confidence intervals.
-    Args:
-        model (statsmodels.regression.linear_model.RegressionResultsWrapper): The fitted model.
-        title (str): Title of the plot.
-        y_label (str): Label for the y-axis.
-    Returns:
-        matplotlib.figure.Figure: The generated matplotlib figure.
-    """
-    results_df = pd.DataFrame({
-        'estimate': model.params,
-        'lower': model.conf_int()[0],
-        'upper': model.conf_int()[1]
-    })
-    results_df['term'] = results_df.index
-    
-    # Remove 'C(Residue)[T.' or 'C(Variable)[T.' prefixes for cleaner labels
-    results_df['term'] = results_df['term'].str.replace(r'C\(Residue\)\[T\.', '', regex=True)
-    results_df['term'] = results_df['term'].str.replace(r'C\(Variable\)\[T\.', '', regex=True)
-    results_df['term'] = results_df['term'].str.replace(r'\]', '', regex=True)
-    results_df['term'] = results_df['term'].str.replace(r'\:C\(Variable\)\[T\.', ' x ', regex=True) # For interaction terms
-    results_df['term'] = results_df['term'].str.replace(r'C\(Variable\)', 'Variable', regex=True) # For single variable terms
-
-    fig, ax = plt.subplots(figsize=(10, max(5, len(results_df) * 0.6)))
-    ax.errorbar(x=results_df['estimate'], y=results_df['term'], 
-                xerr=[results_df['estimate'] - results_df['lower'], results_df['upper'] - results_df['estimate']],
-                fmt='o', capsize=5, color='blue')
-    ax.axvline(x=0, color='red', linestyle='dashed')
-    ax.set_xlabel("Tamanho do Efeito (lnRR)")
-    ax.set_ylabel(y_label)
-    ax.set_title(title)
-    ax.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
-    plt.tight_layout()
-    return fig
-
-def generate_funnel_plot(data, model):
-    """
-    Generates a funnel plot to assess publication bias.
-    Args:
-        data (pandas.DataFrame): The original data with lnRR and var_lnRR.
-        model (statsmodels.regression.linear_model.RegressionResultsWrapper): The fitted model.
-    Returns:
-        matplotlib.figure.Figure: The generated matplotlib figure.
-    """
-    fig, ax = plt.subplots(figsize=(8, 6))
-
-    # Calculate standard error from variance of lnRR
-    data['se_lnRR'] = np.sqrt(data['var_lnRR'])
-
-    # Get the overall effect estimate (e.g., from the intercept or average of coefficients if no intercept)
-    # For a model with C(Residue) - 1, there's no overall intercept.
-    # We can use the mean of the lnRR or the estimate from a fixed-effects model if one was run for overall effect.
-    # For a funnel plot, often you plot against the *overall* effect.
-    # Let's use the average of the observed lnRR as the center for the funnel plot lines for now.
-    # Or, if `model` is a single overall effect model, use its estimate.
-    
-    # If using a model like model_residue or model_variable, the 'summary'
-    # gives estimates for each category, not a single overall effect.
-    # For a typical funnel plot, we need a single overall effect (e.g., from an intercept-only model).
-    # Let's calculate a pooled mean lnRR for the center of the funnel.
-    
-    pooled_lnRR = np.average(data['lnRR'], weights=1/data['var_lnRR']) # Inverse variance weighted average
-
-    # Plot points
-    ax.scatter(data['lnRR'], data['se_lnRR'], alpha=0.7, edgecolors='w', s=50)
-
-    # Add funnel lines (approximate for typical standard errors)
-    # The funnel boundaries are typically +/- 1.96 * SE, centered around the pooled effect.
-    max_se = data['se_lnRR'].max()
-    se_range = np.linspace(0, max_se, 100)
-    
-    # Upper and lower bounds for 95% CI
-    upper_bound = pooled_lnRR + 1.96 * se_range
-    lower_bound = pooled_lnRR - 1.96 * se_range
-    
-    ax.plot(upper_bound, se_range, linestyle='--', color='grey')
-    ax.plot(lower_bound, se_range, linestyle='--', color='grey')
-    ax.axvline(x=pooled_lnRR, color='red', linestyle=':', label=f'Pooled lnRR: {pooled_lnRR:.2f}')
-
-    ax.set_xlabel("Log Response Ratio (lnRR)")
-    ax.set_ylabel("Standard Error (SE)")
-    ax.set_title("Gráfico de Funil para Viés de Publicação")
-    ax.invert_yaxis() # Larger SE at the bottom
+    ax.set_ylabel("Standard Error")
+    ax.set_title("Funnel Plot for Publication Bias")
+    ax.invert_yaxis() # Standard for funnel plots (larger SE at top)
+    ax.grid(True, linestyle='--', alpha=0.6)
     ax.legend()
-    ax.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
     plt.tight_layout()
     return fig
