@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 # Função para carregar e preparar os dados
 def load_and_prepare_data(file_path):
     try:
-        dados = pd.read_csv(file_path, delimiter=';', decimal='.')
+        # Usa utf-8-sig para remover o BOM do cabeçalho (problema comum ao exportar de Excel)
+        dados = pd.read_csv(file_path, delimiter=';', decimal='.', encoding='utf-8-sig')
         print(f"✅ Dados carregados com sucesso de: {file_path}")
     except Exception as e:
         print(f"❌ Erro ao carregar o CSV: {e}")
@@ -33,11 +34,9 @@ def load_and_prepare_data(file_path):
 def rodar_meta_analise(dados, variavel, tratamento, modelo='random'):
     df = dados[dados['Variable'] == variavel].copy()
 
-    # Seleciona grupos controle e tratamento
     tratamento_df = df[df['Treatment'] == tratamento]
     controle_df = df[df['Treatment'] != tratamento]
 
-    # Verifica se há pares suficientes
     estudos = sorted(set(tratamento_df['Study']) & set(controle_df['Study']))
     if len(estudos) < 2:
         return None, "Número insuficiente de estudos comparáveis."
@@ -55,10 +54,11 @@ def rodar_meta_analise(dados, variavel, tratamento, modelo='random'):
         m1, sd1 = t['Mean'].values[0], t['Std Dev'].values[0]
         m2, sd2 = c['Mean'].values[0], c['Std Dev'].values[0]
 
-        # Usa N=10 como aproximação para ambos os grupos
-        es, var_es = effectsize_smd(mean1=m1, sd1=sd1, nobs1=10,
-                                    mean2=m2, sd2=sd2, nobs2=10,
-                                    usevar='pooled', ddof=1)
+        es, var_es = effectsize_smd(
+            mean1=m1, sd1=sd1, nobs1=10,
+            mean2=m2, sd2=sd2, nobs2=10,
+            usevar='pooled', ddof=1
+        )
 
         efeitos.append(es)
         erros.append(var_es)
@@ -85,9 +85,9 @@ def gerar_forest_plot(resultado, efeitos, erros, titulo):
     ]], fmt='o', color='black', ecolor='gray', capsize=5)
 
     ax.axvline(x=0, linestyle='--', color='red')
-    ax.set_xlabel("Efeito Padronizado (SMD)")
+    ax.set_xlabel("Standardized Mean Difference (SMD)")
     ax.set_yticks(range(len(efeitos)))
-    ax.set_yticklabels([f"Estudo {i+1}" for i in range(len(efeitos))])
+    ax.set_yticklabels([f"Study {i+1}" for i in range(len(efeitos))])
     ax.set_title(titulo)
     plt.tight_layout()
 
