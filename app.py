@@ -12,11 +12,11 @@ This application performs a meta-analysis to evaluate the effect of different re
 st.header("1. Loading Data")
 st.markdown("**PRISMA 2020 Flow Diagram**  \nView Study Selection Process")
 
-# Caminho do CSV no GitHub
+# Caminho para o CSV no GitHub
 file_path = "https://raw.githubusercontent.com/loopvinyl/metaanalysis/main/data/csv.csv"
-st.write(f"Loading data from: `{file_path}`")
+st.write(f"Loading data from: {file_path}")
 
-# Carrega os dados
+# Carrega e prepara os dados
 dados_preparados = ma.load_and_prepare_data(file_path)
 
 if dados_preparados.empty:
@@ -49,7 +49,7 @@ else:
     fig = ma.gerar_forest_plot(resultado, resultado.effects, resultado.variances, f"{variavel_escolhida} ({modelo.title()} Effects)")
     st.pyplot(fig)
 
-# 3. Additional Plots (placeholder)
+# 3. Additional Plots
 st.header("3. Additional Plots")
 if dados_preparados.empty:
     st.warning("Cannot generate additional plots. Data was not loaded or processed correctly.")
