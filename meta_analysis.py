@@ -3,37 +3,43 @@ import statsmodels.api as sm
 from statsmodels.stats.meta_analysis import effectsize_smd, combine_effects
 import matplotlib.pyplot as plt
 
-# Função para carregar e preparar os dados
 def load_and_prepare_data(file_path):
     try:
-        # Usa utf-8-sig para remover o BOM do cabeçalho (problema comum ao exportar de Excel)
-        dados = pd.read_csv(file_path, delimiter=';', decimal='.', encoding='utf-8-sig')
-        print(f"✅ Dados carregados com sucesso de: {file_path}")
+        # Detecta delimitador automaticamente, remove BOM
+        dados = pd.read_csv(file_path, encoding='utf-8-sig', sep=None, engine='python')
+        print(f"✅ Dados carregados de: {file_path}")
     except Exception as e:
         print(f"❌ Erro ao carregar o CSV: {e}")
         return pd.DataFrame()
 
-    # Verificação das colunas obrigatórias
+    # Limpa e padroniza os nomes das colunas
+    dados.columns = dados.columns.str.strip().str.replace('ï»¿', '').str.replace('_', ' ')
+
+    # Renomeia colunas conhecidas
+    rename_dict = {
+        'Mean Value': 'Mean',
+        'Std Dev': 'Std Dev',
+        'Std_Dev': 'Std Dev'
+    }
+    dados.rename(columns=rename_dict, inplace=True)
+
+    # Verifica colunas obrigatórias
     colunas_necessarias = ['Variable', 'Study', 'Treatment', 'Mean', 'Std Dev']
     for col in colunas_necessarias:
         if col not in dados.columns:
             print(f"❌ Coluna ausente: {col}")
             return pd.DataFrame()
 
-    # Conversão de colunas numéricas
+    # Conversão de valores
     dados['Mean'] = pd.to_numeric(dados['Mean'], errors='coerce')
     dados['Std Dev'] = pd.to_numeric(dados['Std Dev'], errors='coerce')
-
-    # Remoção de linhas com dados ausentes
     dados.dropna(subset=['Mean', 'Std Dev'], inplace=True)
 
     return dados
 
 
-# Função para executar a meta-análise
 def rodar_meta_analise(dados, variavel, tratamento, modelo='random'):
     df = dados[dados['Variable'] == variavel].copy()
-
     tratamento_df = df[df['Treatment'] == tratamento]
     controle_df = df[df['Treatment'] != tratamento]
 
@@ -71,7 +77,6 @@ def rodar_meta_analise(dados, variavel, tratamento, modelo='random'):
     return resultado, None
 
 
-# Função para gerar o gráfico forest plot
 def gerar_forest_plot(resultado, efeitos, erros, titulo):
     fig, ax = plt.subplots(figsize=(8, 6))
 
