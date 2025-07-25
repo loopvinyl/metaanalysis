@@ -2,51 +2,54 @@ import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
-from statsmodels.regression.mixed_linear_model import MixedLM # Import for REML
+from statsmodels.regression.mixed_linear_model import MixedLM # Import para REML
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 
-# Suppress warnings for cleaner output
+# Suprime avisos para uma saída mais limpa
 import warnings
 warnings.filterwarnings("ignore")
 
 def load_and_prepare_data(file_path):
     """
-    Loads data from a CSV file and performs initial cleaning and preparation.
+    Carrega dados de um arquivo CSV e realiza a limpeza e preparação inicial.
 
     Args:
-        file_path (str): The path to the CSV file.
+        file_path (str): O caminho para o arquivo CSV.
 
     Returns:
-        pandas.DataFrame: The prepared DataFrame.
+        pandas.DataFrame: O DataFrame preparado.
     """
     try:
         dados = pd.read_csv(file_path, sep=';', decimal='.')
     except FileNotFoundError:
-        return pd.DataFrame() # Return empty if file not found
+        return pd.DataFrame() # Retorna vazio se o arquivo não for encontrado
+    except Exception as e:
+        print(f"Erro ao carregar ou ler o arquivo CSV: {e}")
+        return pd.DataFrame()
 
-    # Rename columns to avoid issues with spaces
+    # Renomear colunas para evitar problemas com espaços
     dados = dados.rename(columns={'Std Dev': 'Std_Dev', 'Original Unit': 'Original_Unit'})
 
-    # Convert numeric columns, handling potential errors
+    # Converter colunas numéricas, tratando possíveis erros
     numeric_cols = ['Mean', 'Std_Dev']
     for col in numeric_cols:
         dados[col] = pd.to_numeric(dados[col], errors='coerce')
-    dados = dados.dropna(subset=numeric_cols) # Drop rows where conversion failed
+    dados = dados.dropna(subset=numeric_cols) # Remove linhas onde a conversão falhou
 
     return dados
 
 def filter_irrelevant_treatments(dados):
     """
-    Filters out irrelevant treatments from the dataset.
+    Filtra tratamentos irrelevantes do conjunto de dados.
     Args:
-        dados (pandas.DataFrame): The input DataFrame.
+        dados (pandas.DataFrame): O DataFrame de entrada.
     Returns:
-        pandas.DataFrame: The DataFrame with irrelevant treatments filtered out.
+        pandas.DataFrame: O DataFrame com tratamentos irrelevantes filtrados.
     """
-    # List of treatments that are NOT final vermicompost
+    # Lista de tratamentos que NÃO são vermicomposto final
     treatments_to_exclude = [
         "Fresh Grape Marc",
         "Manure",
@@ -64,11 +67,11 @@ def filter_irrelevant_treatments(dados):
 
 def define_groups_and_residues(dados_filtrados):
     """
-    Defines 'Control' vs. 'Treatment' groups and 'Residue' types.
+    Define os grupos 'Control' vs. 'Treatment' e os tipos de 'Residue'.
     Args:
-        dados_filtrados (pandas.DataFrame): The filtered DataFrame.
+        dados_filtrados (pandas.DataFrame): O DataFrame filtrado.
     Returns:
-        pandas.DataFrame: The DataFrame with 'Group' and 'Residue' columns.
+        pandas.DataFrame: O DataFrame com as colunas 'Group' e 'Residue'.
     """
     dados_grupos = dados_filtrados.copy()
 
@@ -89,66 +92,67 @@ def define_groups_and_residues(dados_filtrados):
 
 def prepare_for_meta_analysis(dados_grupos):
     """
-    Prepares data for meta-analysis by calculating Log Response Ratio (lnRR) and its variance.
+    Prepara os dados para meta-análise, calculando o Log Response Ratio (lnRR) e sua variância.
     Args:
-        dados_grupos (pandas.DataFrame): The DataFrame with groups and residues defined.
+        dados_grupos (pandas.DataFrame): O DataFrame com grupos e resíduos definidos.
     Returns:
-        pandas.DataFrame: The DataFrame ready for meta-analysis.
+        pandas.DataFrame: O DataFrame pronto para meta-análise.
     """
-    # Identify variables that have a control group
+    # Identifica variáveis que possuem grupo controle
     variables_with_control = dados_grupos[dados_grupos['Group'] == "Control"]['Variable'].unique()
 
     dados_meta = dados_grupos[dados_grupos['Variable'].isin(variables_with_control)].copy()
 
-    # Calculate control means and std_devs
+    # Calcula as médias e desvios padrão do controle
     control_data = dados_meta[dados_meta['Group'] == "Control"].groupby('Variable').agg(
         Mean_control=('Mean', 'first'),
         Std_Dev_control=('Std_Dev', 'first')
     ).reset_index()
     
-    # Handle cases where Std_Dev_control might be zero
+    # Lida com casos onde Std_Dev_control pode ser zero
     control_data['Std_Dev_control'] = control_data['Std_Dev_control'].replace(0, 0.001)
 
     dados_meta = dados_meta[dados_meta['Group'] == "Treatment"].merge(control_data, on='Variable', how='left')
 
-    
-    # Adjust Std_Dev for treatment group to avoid division by zero
+    # Ajusta Std_Dev para o grupo de tratamento para evitar divisão por zero
     dados_meta['Std_Dev_adj'] = dados_meta['Std_Dev'].replace(0, 0.001)
 
-    # Calculate Log Response Ratio (lnRR) and its variance
-    # Ensure Mean_control and Mean are not zero before log
+    # Calcula o Log Response Ratio (lnRR) e sua variância
+    # Garante que Mean_control e Mean não sejam zero antes do log
     dados_meta = dados_meta[
         (dados_meta['Mean_control'] > 0) & (dados_meta['Mean'] > 0)
     ].copy()
 
     dados_meta['lnRR'] = np.log(dados_meta['Mean'] / dados_meta['Mean_control'])
     
-    # Variance of lnRR calculation:
+    # Cálculo da variância do lnRR:
     # (Std_Dev_treatment^2 / (N_treatment * Mean_treatment^2)) + (Std_Dev_control^2 / (N_control * Mean_control^2))
+    # Assumindo N_treatment e N_control como 1 para estudos individuais,
+    # se você tiver tamanhos de amostra reais (n) nos seus dados, use-os em vez de 1.
     dados_meta['var_lnRR'] = (dados_meta['Std_Dev_adj']**2 / (1 * dados_meta['Mean']**2)) + \
                              (dados_meta['Std_Dev_control']**2 / (1 * dados_meta['Mean_control']**2))
     
-    # Filter out rows with NaN or infinite values in lnRR or var_lnRR
+    # Filtra linhas com valores NaN ou infinitos em lnRR ou var_lnRR
     dados_meta = dados_meta.replace([np.inf, -np.inf], np.nan).dropna(subset=['lnRR', 'var_lnRR'])
     
     return dados_meta
 
 def run_meta_analysis(dados_meta, model_type="Residue"):
     """
-    Runs meta-analysis using MixedLM to approximate REML estimation like metafor.
+    Executa a meta-análise usando MixedLM para aproximar a estimação REML, semelhante ao metafor.
 
     Args:
-        dados_meta (pandas.DataFrame): Prepared data for meta-analysis.
-        model_type (str): Type of model to run ("Residue", "Variable", or "Interaction").
+        dados_meta (pandas.DataFrame): Dados preparados para meta-análise.
+        model_type (str): Tipo de modelo a ser executado ("Residue", "Variable", ou "Interaction").
 
     Returns:
-        dict: A dictionary containing model results (beta, se, pval, ci, tau2, I2, QE, etc.).
+        dict: Um dicionário contendo os resultados do modelo (beta, se, pval, ci, tau2, I2, etc.).
     """
     if dados_meta.empty or len(dados_meta) < 2:
-        return {} # Return empty dict if not enough data for analysis
+        return {} # Retorna um dicionário vazio se não houver dados suficientes para a análise
 
     formula = 'lnRR ~ '
-    groups_col = 'Study' # Grouping variable for random effects (studies)
+    groups_col = 'Study' # Variável de agrupamento para efeitos aleatórios (estudos)
 
     if model_type == "Residue":
         if len(dados_meta['Residue'].unique()) < 2: return {}
@@ -157,52 +161,42 @@ def run_meta_analysis(dados_meta, model_type="Residue"):
         if len(dados_meta['Variable'].unique()) < 2: return {}
         formula += 'C(Variable) - 1'
     elif model_type == "Interaction":
-        # Need to ensure there are enough unique combinations for interaction
+        # Precisa garantir que há combinações únicas suficientes para a interação
         if dados_meta[['Residue', 'Variable']].drop_duplicates().shape[0] < 2: return {}
         formula += 'C(Residue):C(Variable) - 1'
     else:
-        raise ValueError("Invalid model_type. Choose 'Residue', 'Variable', or 'Interaction'.")
+        raise ValueError("model_type inválido. Escolha 'Residue', 'Variable' ou 'Interaction'.")
 
-    # The `re_formula="1"` specifies a random intercept for each group (study).
-    # The `vc_formula` (variance components formula) is tricky to match `metafor`'s
-    # exact estimation of tau^2 across different model specifications.
-    # For a general `metafor` REML model, we'd typically have a random intercept
-    # for `Study` to capture between-study heterogeneity.
-    # `weights` in MixedLM are for the conditional variance of the observed data,
-    # which in meta-analysis would be `1/var_lnRR`.
-
-    # Ensure weights column exists and is not zero/inf
-    dados_meta['weights_mlm'] = 1 / dados_meta['var_lnRR']
-    dados_meta['weights_mlm'] = dados_meta['weights_mlm'].replace([np.inf, -np.inf], np.nan).fillna(0)
-    
-    # It's crucial that 'groups' for MixedLM reflects the independent entities
-    # over which the random effect acts. In meta-analysis, this is typically the study.
-    # For now, let's use 'Study' as the grouping variable.
-    if 'Study' not in dados_meta.columns:
-        # Fallback if 'Study' is not in data, or create a dummy unique ID per row
+    # Garante que a coluna 'Study' existe para agrupamento, ou cria um ID temporário
+    if groups_col not in dados_meta.columns:
         dados_meta['Study_ID'] = dados_meta.index.astype(str)
         groups_col = 'Study_ID'
-        warnings.warn("'Study' column not found, using row index as grouping variable for MixedLM random effects.")
+        warnings.warn(f"Coluna '{groups_col}' não encontrada, usando índice da linha como variável de agrupamento para efeitos aleatórios MixedLM.")
+    
+    # Calcula os pesos (inverso da variância do efeito)
+    dados_meta['weights_mlm'] = 1 / dados_meta['var_lnRR']
+    dados_meta['weights_mlm'] = dados_meta['weights_mlm'].replace([np.inf, -np.inf], np.nan).fillna(0) # Zera NaNs/Inf
 
     try:
         model = MixedLM.from_formula(
             formula,
             data=dados_meta,
             groups=dados_meta[groups_col],
-            re_formula="1", # Random intercept for each study
-            vc_formula={"study_var": "0 + C(" + groups_col + ")"} # This is to specify a random effect variance component
+            re_formula="1", # Intercepto aleatório para cada estudo
+            # vc_formula é opcional e pode ser usado para especificar a estrutura da variância do efeito aleatório
+            # No metafor, a variância entre estudos (tau^2) é estimada. MixedLM faz isso com re_formula="1".
+            # vc_formula={"study_var": "0 + C(" + groups_col + ")"} # Uma forma de explicitar a variação por grupo
         )
         result = model.fit(reml=True)
     except Exception as e:
-        print(f"Error fitting MixedLM model for {model_type}: {e}")
-        # If the model fails due to non-convergence or singularity, we can try a simpler WLS
-        warnings.warn(f"MixedLM failed for {model_type}, attempting WLS as fallback. Error: {e}")
+        print(f"Erro ao ajustar o modelo MixedLM para {model_type}: {e}")
+        warnings.warn(f"MixedLM falhou para {model_type}, tentando WLS como fallback. Erro: {e}")
         try:
+            # Fallback para Weighted Least Squares (WLS) se MixedLM falhar
             dados_meta['weights_wls'] = 1 / dados_meta['var_lnRR']
             dados_meta['weights_wls'] = dados_meta['weights_wls'].replace([np.inf, -np.inf], np.nan).fillna(0)
             model_wls = smf.wls(formula, data=dados_meta, weights=dados_meta['weights_wls']).fit()
-            # For WLS, heterogeneity stats won't be directly estimated like REML
-            # Will return a simplified output
+            
             summary_df = model_wls.summary2().tables[1]
             summary_df = summary_df.reset_index().rename(columns={'index': 'term'})
             summary_df['lower'] = summary_df['Coef.'] - 1.96 * summary_df['Std.Err.']
@@ -213,63 +207,40 @@ def run_meta_analysis(dados_meta, model_type="Residue"):
                 'se': model_wls.bse,
                 'zval': model_wls.tvalues,
                 'pval': model_wls.pvalues,
-                'ci.lb': summary_df['lower'], # Use computed CIs
-                'ci.ub': summary_df['upper'], # Use computed CIs
-                'tau2': np.nan, # Not estimated by WLS
-                'I2': np.nan,   # Not estimated by WLS
-                'QE': np.nan,   # Not directly from WLS
+                'ci.lb': summary_df['lower'], 
+                'ci.ub': summary_df['upper'],
+                'tau2': np.nan, # Não estimado por WLS
+                'I2': np.nan,   # Não estimado por WLS
+                'QE': np.nan,   # Não direto de WLS
+                'QE_pval': np.nan,
                 'model': model_wls,
                 'model_type': 'WLS_FALLBACK'
             }
         except Exception as e_wls:
-            print(f"WLS fallback also failed: {e_wls}")
+            print(f"O fallback para WLS também falhou: {e_wls}")
             return {}
 
-    # Extract key statistics from MixedLM result
-    # For tau^2, MixedLM.cov_re gives the estimated covariance matrix of random effects.
-    # For a random intercept, tau^2 is the variance of the random intercept.
+    # Extrai as principais estatísticas do resultado do MixedLM
     tau2 = result.cov_re.iloc[0, 0] if not result.cov_re.empty else 0.0
     
-    # Calculate I^2: 100 * tau^2 / (tau^2 + average sampling variance)
-    # Average sampling variance is mean of var_lnRR
+    # Calcula I^2: 100 * tau^2 / (tau^2 + variância de amostragem média)
     avg_sampling_var = dados_meta['var_lnRR'].mean()
     I2 = 100 * (tau2 / (tau2 + avg_sampling_var)) if (tau2 + avg_sampling_var) > 0 else 0.0
 
-    # Test for Residual Heterogeneity (QE) from REML model
-    # MixedLM doesn't directly provide a chi-squared QE test for residual heterogeneity
-    # like rma. This is an approximation/placeholder.
-    # A proper QE would require calculating sum of squared residuals / inverse variance weights.
-    # For now, using result.llf (Log-Likelihood Function) as a placeholder for display.
-    # In a full implementation, you'd calculate QE based on raw residuals and variance.
-    # For demonstration, let's use -2 * logLikelihood difference or similar if available,
-    # or just note that QE requires a specific calculation not directly exposed here.
-    # Let's approximate QM for moderators if available, and note QE is for residual.
-    
-    # For a proper QE from MixedLM, one would fit a fixed-effects model first
-    # and compare the residual deviance. This is complex for a quick replication.
-    # We will simply report result.llf for now or use a placeholder if result.llf is not appropriate.
-    # Given the R output is a chi-square test, reporting llf directly might be confusing.
-    # Let's stick with a placeholder or omit if it can't be computed accurately without more steps.
-    
-    # Let's try to get a p-value for the overall model significance (QM for moderators)
-    # The p-value for the omnibus test of moderators in MixedLM is typically from model comparison (LRT).
-    # For now, we'll take a mean or similar if no direct QM p-val for entire model.
-    # In rma, QM is test of coefficients 1:n being zero.
-    
-    # Simplified QE (placeholder for visual consistency)
-    QE_val = -2 * result.llf # Not a true QE, but a value from the model fitting
-    # p-value for QE is complex without direct access to Chi-squared stat.
-    # For demonstration, we'll use a placeholder or assume highly significant if tau2 > 0
-    QE_pval = 0.0001 if tau2 > 0.001 else 0.9999 # Very rough heuristic
+    # Para QE (teste de heterogeneidade residual), MixedLM não fornece diretamente como o metafor.
+    # O valor de QE e seu p-valor abaixo são placeholders ou aproximações grosseiras
+    # para manter a estrutura de saída consistente, mas não são equivalentes exatos ao metafor.
+    QE_val = np.nan # Não diretamente disponível
+    QE_pval = np.nan # Não diretamente disponível
 
-    # Prepare output matching R's metafor summary structure
+    # Prepara a saída correspondendo à estrutura de resumo do metafor em R
     output = {
         'beta': result.fe_params,
         'se': result.bse,
         'zval': result.tvalues,
         'pval': result.pvalues,
-        'ci.lb': result.conf_int()[0], # Lower CI
-        'ci.ub': result.conf_int()[1], # Upper CI
+        'ci.lb': result.conf_int()[0], # CI Inferior
+        'ci.ub': result.conf_int()[1], # CI Superior
         'tau2': tau2,
         'I2': I2,
         'QE': QE_val,
@@ -282,119 +253,102 @@ def run_meta_analysis(dados_meta, model_type="Residue"):
 
 def generate_forest_plot(dados_meta, model_results, title="Forest Plot"):
     """
-    Generates a Forest Plot similar to metafor, showing individual study effects
-    and the overall effect estimate from the meta-analysis model.
+    Gera um Forest Plot similar ao metafor, mostrando os efeitos de estudos individuais
+    e a estimativa do efeito geral do modelo de meta-análise.
 
     Args:
-        dados_meta (pandas.DataFrame): Prepared data for meta-analysis (individual studies).
-        model_results (dict): Results from run_meta_analysis, containing overall effect.
-        title (str): Title of the forest plot.
+        dados_meta (pandas.DataFrame): Dados preparados para meta-análise (estudos individuais).
+        model_results (dict): Resultados de run_meta_analysis, contendo o efeito geral.
+        title (str): Título do forest plot.
 
     Returns:
-        matplotlib.figure.Figure: The matplotlib figure for the forest plot.
+        matplotlib.figure.Figure: A figura matplotlib para o forest plot.
     """
-    if dados_meta.empty or not model_results:
+    if dados_meta.empty or not model_results: # Verifica se model_results não está vazio
         return None
 
-    # Sort data for better visualization
+    # Ordena os dados para melhor visualização
     dados_meta = dados_meta.sort_values(by='lnRR', ascending=True).reset_index(drop=True)
 
-    fig, ax = plt.subplots(figsize=(10, max(6, len(dados_meta) * 0.4 + 2))) # Dynamic height
+    fig, ax = plt.subplots(figsize=(10, max(6, len(dados_meta) * 0.4 + 2))) # Altura dinâmica
 
-    # Determine x-axis limits based on data and overall effect
-    all_effects = dados_meta['lnRR'].tolist() + model_results['beta'].tolist()
+    # Determina os limites do eixo x com base nos dados e no efeito geral
+    all_effects = dados_meta['lnRR'].tolist()
+    # Adiciona os coeficientes do modelo se existirem para influenciar os limites
+    if 'beta' in model_results and not model_results['beta'].empty:
+        all_effects.extend(model_results['beta'].tolist())
+
     min_x = min(all_effects) - 0.5
     max_x = max(all_effects) + 0.5
     
-    # Plotting individual study effects
+    # Plotando efeitos de estudos individuais
     for i, row in dados_meta.iterrows():
         label = f"{row['Study']} - {row['Residue']} - {row['Variable']}"
         effect = row['lnRR']
-        # Use variance for individual study CI
+        # Usa variância para o CI do estudo individual
         se_individual = np.sqrt(row['var_lnRR'])
         ci_lower_individual = effect - 1.96 * se_individual
         ci_upper_individual = effect + 1.96 * se_individual
         
         ax.plot([ci_lower_individual, ci_upper_individual], [i, i], color='gray', linestyle='-', linewidth=1.5, solid_capstyle='butt')
-        ax.plot(effect, i, 's', color='blue', markersize=6, zorder=3) # Square marker
+        ax.plot(effect, i, 's', color='blue', markersize=6, zorder=3) # Marcador quadrado
         
-        # Add text for effect size and CI on the right side
+        # Adiciona texto para tamanho do efeito e CI no lado direito
         ax.text(max_x + 0.1, i, f"{effect:.2f} [{ci_lower_individual:.2f}, {ci_upper_individual:.2f}]", va='center', ha='left', fontsize=8)
-        # Add study label on the left side
+        # Adiciona rótulo do estudo no lado esquerdo
         ax.text(min_x - 0.1, i, label, va='center', ha='right', fontsize=8)
 
-    # Add overall effect (from the model results)
-    # The overall effect in MixedLM is represented by the coefficients of the fixed effects.
-    # For a model like `lnRR ~ C(Residue) - 1`, each coefficient IS an overall effect for that residue.
-    # To show an 'overall' point for the *entire* meta-analysis (like in a common effect model),
-    # we'd need to calculate a pooled effect size across all studies.
-    # For a model with moderators, each beta is an effect *for that moderator level*.
-    # Let's plot the average of the estimated effects as a diamond, representing a pooled effect if meaningful,
-    # or just indicate the range of estimates.
-    
-    # If it's a model like ~ Residue - 1, each 'beta' is an overall effect for that residue.
-    # The forest plot usually shows a diamond for the combined effect of ALL studies.
-    # This requires pooling, which is what the MixedLM does. Let's use the mean of fixed effects
-    # as a representative 'overall' if we have multiple coefficients.
-    
-    # Calculate a combined pooled effect for the plot if there are fixed effects.
-    if not model_results['beta'].empty:
-        # A simple pooled mean from the model's fixed effects.
-        # This is not a formal summary estimate with CI for the entire plot,
-        # but represents where the model's estimates are centered.
+    # Adiciona o efeito geral (dos resultados do modelo)
+    if 'beta' in model_results and not model_results['beta'].empty:
         pooled_effect = model_results['beta'].mean()
-        # The standard error of this pooled effect would be more complex to derive from MixedLM for the plot diamond.
-        # For simplicity, let's plot it as a line.
-        ax.axvline(pooled_effect, color='purple', linestyle='-', linewidth=1, label='Overall Model Estimate (Mean Coef)')
+        ax.axvline(pooled_effect, color='purple', linestyle='-', linewidth=1, label='Estimativa Média do Modelo (Média Coef)')
 
+    ax.axvline(x=0, color='red', linestyle='--', linewidth=0.8, label='Sem Efeito (lnRR=0)') # Linha de nenhum efeito
 
-    ax.axvline(x=0, color='red', linestyle='--', linewidth=0.8, label='No Effect (lnRR=0)') # Line at no effect
-
-    ax.set_yticks([]) # Hide y-axis labels as we're using text for labels
+    ax.set_yticks([]) # Oculta os rótulos do eixo y já que estamos usando texto para os rótulos
     ax.set_yticklabels([])
     ax.set_xlabel("Log Response Ratio (lnRR) [95% CI]")
     ax.set_title(title)
     ax.grid(True, linestyle='--', alpha=0.6, axis='x')
-    ax.set_xlim(min_x - 0.2, max_x + 0.2) # Adjust x-axis limits dynamically
+    ax.set_xlim(min_x - 0.2, max_x + 0.2) # Ajusta os limites do eixo x dinamicamente
     ax.legend(loc='upper right')
     plt.tight_layout()
     return fig
 
 def generate_funnel_plot(dados_meta):
     """
-    Generates a funnel plot for publication bias, using lnRR and Standard Error.
+    Gera um Funnel Plot para viés de publicação, usando lnRR e Erro Padrão.
     Args:
-        dados_meta (pandas.DataFrame): Prepared data for meta-analysis.
+        dados_meta (pandas.DataFrame): Dados preparados para meta-análise.
     Returns:
-        matplotlib.figure.Figure: The matplotlib figure for the funnel plot.
+        matplotlib.figure.Figure: A figura matplotlib para o funnel plot.
     """
     if dados_meta.empty:
         return None
 
-    # Calculate standard error if not already present
+    # Calcula o erro padrão se ainda não estiver presente
     dados_meta['se_lnRR'] = np.sqrt(dados_meta['var_lnRR'])
 
     fig, ax = plt.subplots(figsize=(8, 8))
 
-    # Plot individual studies
+    # Plota estudos individuais
     ax.scatter(dados_meta['lnRR'], dados_meta['se_lnRR'], color='blue', alpha=0.7)
 
-    # Add pseudo-confidence limits (assuming no effect, lnRR=0)
+    # Adiciona limites de pseudo-confiança (assumindo nenhum efeito, lnRR=0)
     max_se = dados_meta['se_lnRR'].max()
-    # Define a range for x-axis that covers typical effect sizes plus some margin
-    # Using symmetrical range around 0, based on max_se
+    # Define um intervalo para o eixo x que cobre tamanhos de efeito típicos mais alguma margem
     x_range = np.linspace(-3 * max_se, 3 * max_se, 100)
 
-    # 95% CI lines (assuming a fixed effect of 0)
+    # Linhas de CI de 95% (assumindo um efeito fixo de 0)
     ax.plot(x_range, np.abs(x_range) / 1.96, color='grey', linestyle='--', label='Pseudo 95% CI')
     ax.plot(x_range, -np.abs(x_range) / 1.96, color='grey', linestyle='--')
 
-    ax.axvline(0, color='red', linestyle=':', label='No Effect (lnRR=0)') # Line of no effect
+    ax.axvline(0, color='red', linestyle=':', label='No Effect (lnRR=0)') # Linha de nenhum efeito
 
     ax.set_xlabel("Log Response Ratio (lnRR)")
     ax.set_ylabel("Standard Error")
     ax.set_title("Funnel Plot for Publication Bias")
-    ax.invert_yaxis() # Standard for funnel plots (larger SE at top)
+    ax.invert_yaxis() # Padrão para funnel plots (SE maior no topo)
     ax.grid(True, linestyle='--', alpha=0.6)
     ax.legend()
     plt.tight_layout()
