@@ -28,8 +28,8 @@ It automatically loads data from `csv.csv` and performs analysis using weighted 
 # --- Data Loading and Preparation ---
 st.header("1. Data Loading and Preparation")
 
-# Define the path to the CSV file
-file_path = os.path.join("data", "csv.csv")
+# Define the path to the CSV file - ADJUSTED TO BE IN THE SAME DIRECTORY AS app.py
+file_path = "csv.csv" 
 
 dados_meta_analysis = pd.DataFrame() # Initialize empty DataFrame
 
@@ -52,7 +52,7 @@ if os.path.exists(file_path):
     else:
         st.error("Could not load or process data from 'csv.csv'. Please check the file format and ensure it uses ';' as a delimiter and '.' as a decimal separator.")
 else:
-    st.error("❌ File 'csv.csv' not found in 'data/' directory. Please place it there and reload the app.")
+    st.error("❌ File 'csv.csv' not found in the same directory as 'app.py'. Please place it there and reload the app.")
 
 # --- Meta-Analysis Modeling and Visualization ---
 st.header("2. Meta-Analysis Modeling and Visualization")
@@ -109,7 +109,7 @@ if not dados_meta_analysis.empty and len(dados_meta_analysis) >= 2: # At least 2
         st.error(f"Error saving results: {e}")
 
 else:
-    st.info("Please ensure 'csv.csv' is in the 'data/' directory and processed successfully (with at least 2 records) to proceed with the analysis.")
+    st.info("Please ensure 'csv.csv' is in the same directory as 'app.py' and processed successfully (with at least 2 records) to proceed with the analysis.")
 
 # --- Diagnostic and Additional Analyses ---
 st.header("3. Diagnostic and Additional Analyses")
