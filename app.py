@@ -1,203 +1,112 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import meta_analysis as ma # Importa seu módulo com as funções de análise
 import os
-from meta_analysis import (
-    load_and_prepare_data,
-    filter_irrelevant_treatments,
-    define_groups_and_residues,
-    prepare_for_meta_analysis,
-    run_meta_analysis_and_plot,
-    generate_forest_plot,
-    generate_funnel_plot
+
+# --- Configurações da Página Streamlit ---
+st.set_page_config(
+    page_title="Meta-análise de Vermicompostagem",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# --- App Configuration ---
-st.set_page_config(layout="wide", page_title="Vermicompost Meta-Analysis")
-
-# --- Title ---
 st.title("🌱 Vermicompost Meta-Analysis: Effect of Different Residues")
+st.markdown("This application performs a meta-analysis to evaluate the effect of different residues on vermicompost quality, using pre-loaded example data from the repository.")
 
-st.markdown("""
-This application performs a meta-analysis to evaluate the effect of different residues on vermicompost quality,
-using pre-loaded example data from the repository.
-""")
-
-# --- Data Loading Section (including PRISMA) ---
+# --- Seção 1: Carregamento e Preparação dos Dados ---
 st.header("1. Loading Data")
 
-# --- PRISMA Flow Diagram Section ---
-st.subheader("PRISMA 2020 Flow Diagram")
+# Link para o diagrama PRISMA (se aplicável, ajuste o URL se necessário)
+st.markdown("""
+<a href="https://example.com/prisma_diagram.png" target="_blank">
+    PRISMA 2020 Flow Diagram
+</a>
+""", unsafe_allow_html=True)
 
-with st.expander("View Study Selection Process"):
-    st.markdown("""
-    Here's the adapted PRISMA 2020 flow diagram illustrating the study selection process:
+st.info("View Study Selection Process") # Pode ser expandido para mostrar mais detalhes ou um modal
 
-    **Search Strategy:**
-    The following search terms were used in **SCOPUS, Web of Science, and PubMed** databases:
-    `"vermicomposting" AND ( "characterization of vermicompost" OR "Chemical and physical variables" OR "Physico-chemical characterization" OR "Nutrient dynamics" )`
+# Define o caminho do arquivo de dados (agora apontando para o CSV)
+file_path = "data/csv.csv"
 
-    **Identification of studies via databases and registers**
-    ----------------------------------------------------
+# Carregar e preparar os dados usando a função do meta_analysis.py
+st.write(f"Loading data from: '{file_path}'")
 
-    Records identified from*:
-    - Databases (n = 125)
-        - Scopus (n = 48)
-        - Web of Science (n = 8)
-        - PubMed (n = 69)
-    - Registers (n = 0)
+# Adiciona um placeholder para a mensagem de status de carregamento
+status_message = st.empty()
 
-    Records removed before screening:
-    - Duplicate records removed (n = 1)
-    - Records marked as ineligible by automation tools (n = 0)
-    - Records removed for other reasons (n = 0)
+try:
+    dados_preparados = ma.load_and_prepare_data(file_path)
 
-    Identification
-    --------------
+    if not dados_preparados.empty:
+        status_message.success("Data prepared for meta-analysis. "
+                               f"{len(dados_preparados)} records available.")
+        st.subheader("Prepared Data Sample:")
+        st.dataframe(dados_preparados.head())
 
-    Records screened (n = 124)
+        st.info(
+            f"Note on Data Filtering: The initial dataset contained **{len(dados_preparados)}** records "
+            "after initial load and numeric conversion. During preparation, records were filtered to include "
+            "only relevant vermicompost treatments, exclude initial/raw material samples, ensure the presence "
+            "of control groups for variables, and remove any entries with missing or invalid data for "
+            "meta-analysis calculations. This process resulted in **{len(dados_preparados)}** records for the meta-analysis. "
+            "The exact number after all filtering steps (e.g., control group presence) is reflected in the logs."
+        )
 
-    Records excluded**:
-    - Missing key variables (pH, CE, TOC/MO, P, K, N, C/N) (n = 117)
-    - Non-primary literature (reviews/book chapters) (n = 2)
-
-    Reports sought for retrieval (n = 5)
-
-    Reports not retrieved (n = 0)
-
-    Screening
-    ---------
-
-    Reports assessed for eligibility (n = 5)
-
-    Reports excluded:
-    - Insufficient data reporting (n = 0)
-    - Other reasons (n = 0)
-
-    Studies included in review (n = 5)
-
-    Reports of included studies:
-    - Ramos et al. (2024)
-    - Kumar et al. (2023)
-    - Quadar et al. (2022)
-    - Srivastava et al. (2020)
-    - Santana et al. (2020)
-    """)
-
-st.markdown("---") # Separador após a seção PRISMA, ainda dentro do contexto de carregamento de dados
-
-# --- Data Loading Logic (now comes after PRISMA within section 1) ---
-dados_meta_analysis = pd.DataFrame() # Initialize empty DataFrame
-# ALTERAÇÃO AQUI: Mude de csv.csv para excel.xlsx
-file_path_to_process = os.path.join("data", "excel.xlsx") # Caminho para o novo arquivo Excel
-
-if os.path.exists(file_path_to_process):
-    st.info(f"Loading data from: '{file_path_to_process}'")
-
-    # --- Data Processing Pipeline ---
-    dados_raw = load_and_prepare_data(file_path_to_process) # Renamed to dados_raw for clarity
-
-    if not dados_raw.empty:
-        total_initial_records = len(dados_raw)
-
-        dados_filtrados = filter_irrelevant_treatments(dados_raw)
-        dados_grupos = define_groups_and_residues(dados_filtrados)
-        dados_meta_analysis = prepare_for_meta_analysis(dados_grupos)
-
-        if dados_meta_analysis.empty:
-            st.warning("Not enough data to perform meta-analysis after filtering and preparation. Please check the data file.")
-        else:
-            st.success(f"Data prepared for meta-analysis. {len(dados_meta_analysis)} records available.")
-            st.subheader("Prepared Data Sample:")
-            st.dataframe(dados_meta_analysis.head())
-
-            st.markdown(f"""
-            **Note on Data Filtering:**
-            The initial dataset contained **{total_initial_records}** records.
-            During preparation, records were filtered to include only relevant vermicompost treatments,
-            exclude initial/raw material samples, ensure the presence of control groups for variables,
-            and remove any entries with missing or invalid data for meta-analysis calculations.
-            This process resulted in **{len(dados_meta_analysis)}** records for the meta-analysis.
-            """)
     else:
-        st.error(f"Could not load or process data from '{file_path_to_process}'. Please check the file format or content.")
-else:
-    st.error(f"Error: Default data file '{file_path_to_process}' not found in the repository. Please ensure it is present.")
-    st.info("The application requires this file to run.")
+        status_message.error(
+            f"Could not load or process data from '{file_path}'. Please check the file format or content."
+        )
+except Exception as e:
+    status_message.error(f"An unexpected error occurred during data loading: {e}")
+    dados_preparados = pd.DataFrame() # Garante que dados_preparados seja um DataFrame vazio em caso de erro
 
-
-st.markdown("---") # Separador final da seção 1
-
-# --- Meta-Analysis Section ---
+# --- Seção 2: Rodar Modelos de Meta-Análise e Gerar Gráficos ---
 st.header("2. Run Meta-Analysis Models & Generate Plots")
 
-if not dados_meta_analysis.empty:
-    st.markdown("Select a model to run and visualize its results. All plots and outputs are in English.")
+if not dados_preparados.empty:
+    model_choice = st.selectbox(
+        "Select a model to run and visualize its results. All plots and outputs are in English.",
+        ("Residue", "Variable", "Interaction")
+    )
 
-    col1, col2, col3 = st.columns(3)
+    summary_df, fig = ma.run_meta_analysis_and_plot(dados_preparados, model_type=model_choice)
 
-    with col1:
-        if st.button("📈 Analyze by Residue Type"):
-            st.subheader("Analysis by Residue Type")
-            with st.spinner("Calculating..."):
-                summary_df, fig = run_meta_analysis_and_plot(dados_meta_analysis, model_type="Residue")
-                if fig:
-                    st.pyplot(fig)
-                    st.subheader("Model Summary (Residue Type)")
-                    st.dataframe(summary_df.set_index('term'))
-                else:
-                    st.warning("Could not generate plot for Residue Type model. Check data sufficiency.")
-
-    with col2:
-        if st.button("📊 Analyze by Variable"):
-            st.subheader("Analysis by Variable")
-            with st.spinner("Calculating..."):
-                summary_df, fig = run_meta_analysis_and_plot(dados_meta_analysis, model_type="Variable")
-                if fig:
-                    st.pyplot(fig)
-                    st.subheader("Model Summary (Variable)")
-                    st.dataframe(summary_df.set_index('term'))
-                else:
-                    st.warning("Could not generate plot for Variable model. Check data sufficiency.")
-
-    with col3:
-        if st.button("🔗 Analyze Interaction (Residue × Variable)"):
-            st.subheader("Analysis by Interaction (Residue × Variable)")
-            with st.spinner("Calculating..."):
-                summary_df, fig = run_meta_analysis_and_plot(dados_meta_analysis, model_type="Interaction")
-                if fig:
-                    st.pyplot(fig)
-                    st.subheader("Model Summary (Interaction)")
-                    st.dataframe(summary_df.set_index('term'))
-                else:
-                    st.warning("Could not generate plot for Interaction model. Check data sufficiency.")
-
-    st.markdown("---")
-    st.header("3. Additional Plots")
-
-    col_forest, col_funnel = st.columns(2)
-    with col_forest:
-        if st.button("🌳 Generate Forest Plot"):
-            st.subheader("Forest Plot of Individual Studies")
-            with st.spinner("Generating forest plot..."):
-                fig_forest = generate_forest_plot(dados_meta_analysis)
-                if fig_forest:
-                    st.pyplot(fig_forest)
-                else:
-                    st.warning("Could not generate Forest Plot. Check data sufficiency.")
-
-    with col_funnel:
-        if st.button("🧪 Generate Funnel Plot"):
-            st.subheader("Funnel Plot for Publication Bias")
-            with st.spinner("Generating funnel plot..."):
-                fig_funnel = generate_funnel_plot(dados_meta_analysis)
-                if fig_funnel:
-                    st.pyplot(fig_funnel)
-                else:
-                    st.warning("Could not generate Funnel Plot. Check data sufficiency.")
-
+    if fig:
+        st.pyplot(fig)
+        if not summary_df.empty:
+            st.subheader(f"Summary Table for {model_choice} Model:")
+            st.dataframe(summary_df)
+    else:
+        st.warning(f"Could not generate plot for {model_choice} model. Check data or model choice.")
 else:
-    st.info("Data could not be loaded or processed. Please check the 'data/excel.xlsx' file.") # Atualizado para Excel
+    st.warning("Data could not be loaded or processed. Please check the 'data/csv.csv' file.")
 
+
+# --- Seção 3: Gráficos Adicionais ---
+st.header("3. Additional Plots")
+
+if not dados_preparados.empty:
+    plot_choice = st.selectbox(
+        "Select an additional plot to generate:",
+        ("Forest Plot", "Funnel Plot")
+    )
+
+    if plot_choice == "Forest Plot":
+        forest_fig = ma.generate_forest_plot(dados_preparados)
+        if forest_fig:
+            st.pyplot(forest_fig)
+        else:
+            st.warning("Could not generate Forest Plot. Data might be insufficient or invalid.")
+    elif plot_choice == "Funnel Plot":
+        funnel_fig = ma.generate_funnel_plot(dados_preparados)
+        if funnel_fig:
+            st.pyplot(funnel_fig)
+        else:
+            st.warning("Could not generate Funnel Plot. Data might be insufficient or invalid.")
+else:
+    st.warning("Cannot generate additional plots. Data was not loaded or processed correctly.")
+
+
+# --- Rodapé ---
 st.markdown("---")
 st.markdown("Developed using Streamlit and Python for meta-analysis of vermicompost quality.")
