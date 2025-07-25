@@ -1,1 +1,331 @@
+Variable;Study;Treatment;Mean;Std Dev;Unit;Original Unit;Notes
+pH;Ramos et al. (2024);Manure;8.20;0.20;-;-;-
+pH;Ramos et al. (2024);15 days;8.20;0.00;-;-;-
+pH;Ramos et al. (2024);30 days;8.10;0.00;-;-;-
+pH;Ramos et al. (2024);45 days;8.20;0.00;-;-;-
+pH;Ramos et al. (2024);60 days;8.20;0.00;-;-;-
+pH;Ramos et al. (2024);120 days;8.30;0.00;-;-;-
+pH;Kumar et al. (2023);C1B0;7.53;0.14;-;-;-
+pH;Kumar et al. (2023);C1B2;7.12;0.11;-;-;-
+pH;Kumar et al. (2023);C1B4;7.15;0.13;-;-;-
+pH;Kumar et al. (2023);C1B6;7.47;0.14;-;-;-
+pH;Kumar et al. (2023);C2B0;7.30;0.11;-;-;-
+pH;Kumar et al. (2023);C2B2;7.34;0.17;-;-;-
+pH;Kumar et al. (2023);C2B4;7.41;0.12;-;-;-
+pH;Kumar et al. (2023);C2B6;7.36;0.13;-;-;-
+pH;Kumar et al. (2023);C3B0;7.83;0.11;-;-;-
+pH;Kumar et al. (2023);C3B2;7.45;0.16;-;-;-
+pH;Kumar et al. (2023);C3B4;7.36;0.19;-;-;-
+pH;Kumar et al. (2023);C3B6;7.48;0.15;-;-;-
+pH;Quadar et al. (2022);CH0 (Initial);8.60;0.03;-;-;-
+pH;Quadar et al. (2022);CH0 (Final);7.72;0.04;-;-;-
+pH;Quadar et al. (2022);CH25 (Initial);8.24;0.00;-;-;-
+pH;Quadar et al. (2022);CH25 (Final);7.57;0.02;-;-;-
+pH;Quadar et al. (2022);CH50 (Initial);7.85;0.01;-;-;-
+pH;Quadar et al. (2022);CH50 (Final);7.26;0.01;-;-;-
+pH;Quadar et al. (2022);CH75 (Initial);7.48;0.03;-;-;-
+pH;Quadar et al. (2022);CH75 (Final);7.05;0.00;-;-;-
+pH;Quadar et al. (2022);CH100 (Initial);7.12;0.00;-;-;-
+pH;Quadar et al. (2022);CH100 (Final);7.32;0.00;-;-;-
+pH;Srivastava et al. (2020);T1 (Initial);7.48;0.01;-;-;-
+pH;Srivastava et al. (2020);T1 (Final);7.19;0.01;-;-;-
+pH;Srivastava et al. (2020);T2 (Initial);8.10;0.00;-;-;-
+pH;Srivastava et al. (2020);T2 (Final);7.50;0.01;-;-;-
+pH;Srivastava et al. (2020);T3 (Initial);7.91;0.01;-;-;-
+pH;Srivastava et al. (2020);T3 (Final);7.13;0.01;-;-;-
+pH;Srivastava et al. (2020);T4 (Initial);8.20;0.00;-;-;-
+pH;Srivastava et al. (2020);T4 (Final);7.28;0.01;-;-;-
+pH;Santana et al. (2020);Fresh Grape Marc;4.36;0.04;-;-;-
+pH;Santana et al. (2020);15 days;7.72;0.18;-;-;-
+pH;Santana et al. (2020);30 days;7.73;0.10;-;-;-
+pH;Santana et al. (2020);180 days;7.65;0.21;-;-;-
+pH;Santana et al. (2020);360 days;7.51;0.20;-;-;-
+pH;Santana et al. (2020);540 days;7.46;0.14;-;-;-
+pH;Santana et al. (2020);720 days;7.49;0.10;-;-;-
+EC;Ramos et al. (2024);Manure;2.20;0.00;mS/cm;dS/m;1 dS/m = 1 mS/cm
+EC;Ramos et al. (2024);15 days;2.30;0.10;mS/cm;dS/m;-
+EC;Ramos et al. (2024);30 days;2.30;0.10;mS/cm;dS/m;-
+EC;Ramos et al. (2024);45 days;2.40;0.00;mS/cm;dS/m;-
+EC;Ramos et al. (2024);60 days;2.40;0.00;mS/cm;dS/m;-
+EC;Ramos et al. (2024);120 days;2.70;0.10;mS/cm;dS/m;-
+EC;Kumar et al. (2023);C1B0;1.47;0.04;mS/cm;dS/m;-
+EC;Kumar et al. (2023);C1B2;1.56;0.06;mS/cm;dS/m;-
+EC;Kumar et al. (2023);C1B4;1.67;0.05;mS/cm;dS/m;-
+EC;Kumar et al. (2023);C1B6;1.40;0.03;mS/cm;dS/m;-
+EC;Kumar et al. (2023);C2B0;1.12;0.03;mS/cm;dS/m;-
+EC;Kumar et al. (2023);C2B2;1.43;0.05;mS/cm;dS/m;-
+EC;Kumar et al. (2023);C2B4;1.49;0.04;mS/cm;dS/m;-
+EC;Kumar et al. (2023);C2B6;1.32;0.05;mS/cm;dS/m;-
+EC;Kumar et al. (2023);C3B0;1.39;0.07;mS/cm;dS/m;-
+EC;Kumar et al. (2023);C3B2;1.45;0.08;mS/cm;dS/m;-
+EC;Kumar et al. (2023);C3B4;1.51;0.11;mS/cm;dS/m;-
+EC;Kumar et al. (2023);C3B6;1.25;0.06;mS/cm;dS/m;-
+EC;Quadar et al. (2022);CH0 (Initial);3.60;0.05;mS/cm;dS/m;-
+EC;Quadar et al. (2022);CH0 (Final);5.24;0.00;mS/cm;dS/m;-
+EC;Quadar et al. (2022);CH25 (Initial);2.64;0.00;mS/cm;dS/m;-
+EC;Quadar et al. (2022);CH25 (Final);4.14;0.03;mS/cm;dS/m;-
+EC;Quadar et al. (2022);CH50 (Initial);2.15;0.03;mS/cm;dS/m;-
+EC;Quadar et al. (2022);CH50 (Final);3.71;0.01;mS/cm;dS/m;-
+EC;Quadar et al. (2022);CH75 (Initial);1.81;0.04;mS/cm;dS/m;-
+EC;Quadar et al. (2022);CH75 (Final);3.60;0.17;mS/cm;dS/m;-
+EC;Quadar et al. (2022);CH100 (Initial);1.63;0.01;mS/cm;dS/m;-
+EC;Quadar et al. (2022);CH100 (Final);2.85;0.02;mS/cm;dS/m;-
+EC;Srivastava et al. (2020);T1 (Initial);1.41;0.01;mS/cm;mS/cm;-
+EC;Srivastava et al. (2020);T1 (Final);1.91;0.01;mS/cm;mS/cm;-
+EC;Srivastava et al. (2020);T2 (Initial);1.22;0.00;mS/cm;mS/cm;-
+EC;Srivastava et al. (2020);T2 (Final);2.22;0.02;mS/cm;mS/cm;-
+EC;Srivastava et al. (2020);T3 (Initial);1.28;0.02;mS/cm;mS/cm;-
+EC;Srivastava et al. (2020);T3 (Final);2.22;0.01;mS/cm;mS/cm;-
+EC;Srivastava et al. (2020);T4 (Initial);1.16;0.01;mS/cm;mS/cm;-
+EC;Srivastava et al. (2020);T4 (Final);2.36;0.01;mS/cm;mS/cm;-
+EC;Santana et al. (2020);Fresh Grape Marc;1.34;0.15;mS/cm;mS cm?1;-
+EC;Santana et al. (2020);15 days;2.87;0.51;mS/cm;mS cm?1;-
+EC;Santana et al. (2020);30 days;2.83;0.35;mS/cm;mS cm?1;-
+EC;Santana et al. (2020);180 days;2.79;0.84;mS/cm;mS cm?1;-
+EC;Santana et al. (2020);360 days;2.43;0.71;mS/cm;mS cm?1;-
+EC;Santana et al. (2020);540 days;2.23;0.54;mS/cm;mS cm?1;-
+EC;Santana et al. (2020);720 days;1.96;0.60;mS/cm;mS cm?1;-
+TOC;Ramos et al. (2024);Manure;394.20;5.70;g/kg;g/kg;-
+TOC;Ramos et al. (2024);15 days;372.70;4.70;g/kg;g/kg;-
+TOC;Ramos et al. (2024);30 days;370.50;2.70;g/kg;g/kg;-
+TOC;Ramos et al. (2024);45 days;361.20;2.50;g/kg;g/kg;-
+TOC;Ramos et al. (2024);60 days;351.40;10.10;g/kg;g/kg;-
+TOC;Ramos et al. (2024);120 days;341.30;5.60;g/kg;g/kg;-
+TOC;Kumar et al. (2023);C1B0;346.00;13.30;g/kg;%;Convertido (34.6% ? 346.0 g/kg)
+TOC;Kumar et al. (2023);C1B2;332.60;12.40;g/kg;%;Convertido (33.26% ? 332.6 g/kg)
+TOC;Kumar et al. (2023);C1B4;330.10;12.90;g/kg;%;Convertido (33.01% ? 330.1 g/kg)
+TOC;Kumar et al. (2023);C1B6;396.60;14.20;g/kg;%;Convertido (39.66% ? 396.6 g/kg)
+TOC;Kumar et al. (2023);C2B0;368.30;12.80;g/kg;%;Convertido (36.83% ? 368.3 g/kg)
+TOC;Kumar et al. (2023);C2B2;355.20;11.90;g/kg;%;Convertido (35.52% ? 355.2 g/kg)
+TOC;Kumar et al. (2023);C2B4;351.60;12.40;g/kg;%;Convertido (35.16% ? 351.6 g/kg)
+TOC;Kumar et al. (2023);C2B6;378.30;14.50;g/kg;%;Convertido (37.83% ? 378.3 g/kg)
+TOC;Kumar et al. (2023);C3B0;381.70;13.80;g/kg;%;Convertido (38.17% ? 381.7 g/kg)
+TOC;Kumar et al. (2023);C3B2;374.60;12.40;g/kg;%;Convertido (37.46% ? 374.6 g/kg)
+TOC;Kumar et al. (2023);C3B4;391.10;11.70;g/kg;%;Convertido (39.11% ? 391.1 g/kg)
+TOC;Kumar et al. (2023);C3B6;432.80;18.30;g/kg;%;Convertido (43.28% ? 432.8 g/kg)
+TOC;Quadar et al. (2022);CH0 (Initial);479.60;3.20;g/kg;%;Convertido (47.96% ? 479.6 g/kg)
+TOC;Quadar et al. (2022);CH0 (Final);412.70;0.90;g/kg;%;Convertido (41.27% ? 412.7 g/kg)
+TOC;Quadar et al. (2022);CH25 (Initial);573.40;1.10;g/kg;%;Convertido (57.34% ? 573.4 g/kg)
+TOC;Quadar et al. (2022);CH25 (Final);429.20;0.00;g/kg;%;Convertido (42.92% ? 429.2 g/kg)
+TOC;Quadar et al. (2022);CH50 (Initial);603.40;0.10;g/kg;%;Convertido (60.34% ? 603.4 g/kg)
+TOC;Quadar et al. (2022);CH50 (Final);434.00;0.60;g/kg;%;Convertido (43.40% ? 434.0 g/kg)
+TOC;Quadar et al. (2022);CH75 (Initial);633.60;2.10;g/kg;%;Convertido (63.36% ? 633.6 g/kg)
+TOC;Quadar et al. (2022);CH75 (Final);504.90;0.50;g/kg;%;Convertido (50.49% ? 504.9 g/kg)
+TOC;Quadar et al. (2022);CH100 (Initial);637.00;2.00;g/kg;%;Convertido (63.70% ? 637.0 g/kg)
+TOC;Quadar et al. (2022);CH100 (Final);527.00;0.60;g/kg;%;Convertido (52.70% ? 527.0 g/kg)
+TOC;Srivastava et al. (2020);T1 (Initial);429.10;11.90;g/kg;g/kg;-
+TOC;Srivastava et al. (2020);T1 (Final);364.10;7.21;g/kg;g/kg;-
+TOC;Srivastava et al. (2020);T2 (Initial);485.00;4.24;g/kg;g/kg;-
+TOC;Srivastava et al. (2020);T2 (Final);401.50;3.63;g/kg;g/kg;-
+TOC;Srivastava et al. (2020);T3 (Initial);457.90;2.24;g/kg;g/kg;-
+TOC;Srivastava et al. (2020);T3 (Final);344.30;4.74;g/kg;g/kg;-
+TOC;Srivastava et al. (2020);T4 (Initial);473.20;4.53;g/kg;g/kg;-
+TOC;Srivastava et al. (2020);T4 (Final);367.50;0.82;g/kg;g/kg;-
+TOC;Santana et al. (2020);Fresh Grape Marc;484.23;1.60;g/kg;g/kg;-
+TOC;Santana et al. (2020);15 days;474.67;13.98;g/kg;g/kg;-
+TOC;Santana et al. (2020);30 days;481.77;11.04;g/kg;g/kg;-
+TOC;Santana et al. (2020);180 days;464.53;24.36;g/kg;g/kg;-
+TOC;Santana et al. (2020);360 days;441.17;31.15;g/kg;g/kg;-
+TOC;Santana et al. (2020);540 days;449.05;30.94;g/kg;g/kg;-
+TOC;Santana et al. (2020);720 days;457.73;19.91;g/kg;g/kg;-
+OM;Santana et al. (2020);Fresh Grape Marc;91.21;0.30;%;%;Mat ria Org nica (MO)
+OM;Santana et al. (2020);15 days;89.04;2.49;%;%;-
+OM;Santana et al. (2020);30 days;90.56;3.11;%;%;-
+OM;Santana et al. (2020);180 days;85.08;3.25;%;%;-
+OM;Santana et al. (2020);360 days;85.34;3.49;%;%;-
+OM;Santana et al. (2020);540 days;86.97;3.65;%;%;-
+OM;Santana et al. (2020);720 days;85.75;4.89;%;%;-
+N;Ramos et al. (2024);Manure;26.40;0.50;g/kg;g/kg;Valor corrigido (original: 0.15 g/kg)
+N;Ramos et al. (2024);15 days;27.50;0.60;g/kg;g/kg;-
+N;Ramos et al. (2024);30 days;29.10;0.30;g/kg;g/kg;-
+N;Ramos et al. (2024);45 days;28.90;0.20;g/kg;g/kg;-
+N;Ramos et al. (2024);60 days;29.40;0.40;g/kg;g/kg;-
+N;Ramos et al. (2024);120 days;24.80;0.90;g/kg;g/kg;-
+N;Kumar et al. (2023);C1B0;14.50;0.40;g/kg;%;Convertido (1.45% ? 14.5 g/kg)
+N;Kumar et al. (2023);C1B2;16.70;0.70;g/kg;%;Convertido (1.67% ? 16.7 g/kg)
+N;Kumar et al. (2023);C1B4;18.20;0.70;g/kg;%;Convertido (1.82% ? 18.2 g/kg)
+N;Kumar et al. (2023);C1B6;14.00;0.50;g/kg;%;Convertido (1.40% ? 14.0 g/kg)
+N;Kumar et al. (2023);C2B0;13.50;0.40;g/kg;%;Convertido (1.35% ? 13.5 g/kg)
+N;Kumar et al. (2023);C2B2;14.30;0.50;g/kg;%;Convertido (1.43% ? 14.3 g/kg)
+N;Kumar et al. (2023);C2B4;13.70;0.40;g/kg;%;Convertido (1.37% ? 13.7 g/kg)
+N;Kumar et al. (2023);C2B6;12.30;0.30;g/kg;%;Convertido (1.23% ? 12.3 g/kg)
+N;Kumar et al. (2023);C3B0;9.90;0.30;g/kg;%;Convertido (0.99% ? 9.9 g/kg)
+N;Kumar et al. (2023);C3B2;11.80;0.40;g/kg;%;Convertido (1.18% ? 11.8 g/kg)
+N;Kumar et al. (2023);C3B4;13.40;0.50;g/kg;%;Convertido (1.34% ? 13.4 g/kg)
+N;Kumar et al. (2023);C3B6;10.10;0.30;g/kg;%;Convertido (1.01% ? 10.1 g/kg)
+N;Quadar et al. (2022);CH0 (Initial);23.50;0.10;g/kg;%;Convertido (2.35% ? 23.5 g/kg)
+N;Quadar et al. (2022);CH0 (Final);33.60;0.10;g/kg;%;Convertido (3.36% ? 33.6 g/kg)
+N;Quadar et al. (2022);CH25 (Initial);16.80;0.00;g/kg;%;Convertido (1.68% ? 16.8 g/kg)
+N;Quadar et al. (2022);CH25 (Final);26.70;0.00;g/kg;%;Convertido (2.67% ? 26.7 g/kg)
+N;Quadar et al. (2022);CH50 (Initial);14.10;5.00;g/kg;%;Convertido (1.41% ? 14.1 g/kg)
+N;Quadar et al. (2022);CH50 (Final);27.00;3.50;g/kg;%;Convertido (2.70% ? 27.0 g/kg)
+N;Quadar et al. (2022);CH75 (Initial);12.40;0.60;g/kg;%;Convertido (1.24% ? 12.4 g/kg)
+N;Quadar et al. (2022);CH75 (Final);24.00;0.10;g/kg;%;Convertido (2.40% ? 24.0 g/kg)
+N;Quadar et al. (2022);CH100 (Initial);10.60;0.00;g/kg;%;Convertido (1.06% ? 10.6 g/kg)
+N;Quadar et al. (2022);CH100 (Final);18.20;0.10;g/kg;%;Convertido (1.82% ? 18.2 g/kg)
+N;Srivastava et al. (2020);T1 (Initial);6.36;0.28;g/kg;g/kg;-
+N;Srivastava et al. (2020);T1 (Final);11.83;0.31;g/kg;g/kg;-
+N;Srivastava et al. (2020);T2 (Initial);10.57;0.17;g/kg;g/kg;-
+N;Srivastava et al. (2020);T2 (Final);16.50;0.12;g/kg;g/kg;-
+N;Srivastava et al. (2020);T3 (Initial);8.46;0.12;g/kg;g/kg;-
+N;Srivastava et al. (2020);T3 (Final);16.03;0.12;g/kg;g/kg;-
+N;Srivastava et al. (2020);T4 (Initial);9.54;0.08;g/kg;g/kg;-
+N;Srivastava et al. (2020);T4 (Final);15.10;0.09;g/kg;g/kg;-
+N;Santana et al. (2020);Fresh Grape Marc;20.19;0.62;g/kg;g/kg;-
+N;Santana et al. (2020);15 days;39.30;2.42;g/kg;g/kg;-
+N;Santana et al. (2020);30 days;41.70;1.90;g/kg;g/kg;-
+N;Santana et al. (2020);180 days;40.05;3.07;g/kg;g/kg;-
+N;Santana et al. (2020);360 days;37.22;2.42;g/kg;g/kg;-
+N;Santana et al. (2020);540 days;38.06;2.81;g/kg;g/kg;-
+N;Santana et al. (2020);720 days;39.42;2.84;g/kg;g/kg;-
+NH4+;Santana et al. (2020);Fresh Grape Marc;0.00;0.00;g/kg;g/kg;Valor abaixo de detec  o
+NH4+;Santana et al. (2020);15 days;0.65;0.34;g/kg;g/kg;-
+NH4+;Santana et al. (2020);30 days;0.82;0.16;g/kg;g/kg;-
+NH4+;Santana et al. (2020);180 days;0.70;0.22;g/kg;g/kg;-
+NH4+;Santana et al. (2020);360 days;0.58;0.27;g/kg;g/kg;-
+NH4+;Santana et al. (2020);540 days;0.49;0.11;g/kg;g/kg;-
+NH4+;Santana et al. (2020);720 days;0.49;0.16;g/kg;g/kg;-
+NO3-;Santana et al. (2020);Fresh Grape Marc;0.00;0.00;g/kg;g/kg;Valor abaixo de detec  o
+NO3-;Santana et al. (2020);15 days;0.60;0.14;g/kg;g/kg;-
+NO3-;Santana et al. (2020);30 days;0.69;0.45;g/kg;g/kg;-
+NO3-;Santana et al. (2020);180 days;0.42;0.25;g/kg;g/kg;-
+NO3-;Santana et al. (2020);360 days;0.44;0.22;g/kg;g/kg;-
+NO3-;Santana et al. (2020);540 days;0.48;0.30;g/kg;g/kg;-
+NO3-;Santana et al. (2020);720 days;0.42;0.21;g/kg;g/kg;-
+DON;Santana et al. (2020);Fresh Grape Marc;0.00;0.00;g/kg;g/kg;Valor abaixo de detec  o
+DON;Santana et al. (2020);15 days;3.56;0.84;g/kg;g/kg;-
+DON;Santana et al. (2020);30 days;4.17;0.99;g/kg;g/kg;-
+DON;Santana et al. (2020);180 days;3.03;1.08;g/kg;g/kg;-
+DON;Santana et al. (2020);360 days;3.40;1.03;g/kg;g/kg;-
+DON;Santana et al. (2020);540 days;3.07;1.03;g/kg;g/kg;-
+DON;Santana et al. (2020);720 days;2.60;0.79;g/kg;g/kg;-
+P;Ramos et al. (2024);Manure;5.80;0.30;g/kg;g/kg;-
+P;Ramos et al. (2024);15 days;6.40;0.20;g/kg;g/kg;-
+P;Ramos et al. (2024);30 days;6.50;0.20;g/kg;g/kg;-
+P;Ramos et al. (2024);45 days;6.70;0.40;g/kg;g/kg;-
+P;Ramos et al. (2024);60 days;7.70;0.40;g/kg;g/kg;-
+P;Ramos et al. (2024);120 days;9.10;0.30;g/kg;g/kg;-
+P;Kumar et al. (2023);C1B0;8.60;0.30;g/kg;%;Convertido (0.86% ? 8.6 g/kg)
+P;Kumar et al. (2023);C1B2;10.10;0.20;g/kg;%;Convertido (1.01% ? 10.1 g/kg)
+P;Kumar et al. (2023);C1B4;11.80;0.50;g/kg;%;Convertido (1.18% ? 11.8 g/kg)
+P;Kumar et al. (2023);C1B6;9.50;0.30;g/kg;%;Convertido (0.95% ? 9.5 g/kg)
+P;Kumar et al. (2023);C2B0;9.00;0.40;g/kg;%;Convertido (0.90% ? 9.0 g/kg)
+P;Kumar et al. (2023);C2B2;8.70;0.30;g/kg;%;Convertido (0.87% ? 8.7 g/kg)
+P;Kumar et al. (2023);C2B4;9.10;0.50;g/kg;%;Convertido (0.91% ? 9.1 g/kg)
+P;Kumar et al. (2023);C2B6;8.60;0.40;g/kg;%;Convertido (0.86% ? 8.6 g/kg)
+P;Kumar et al. (2023);C3B0;9.50;0.60;g/kg;%;Convertido (0.95% ? 9.5 g/kg)
+P;Kumar et al. (2023);C3B2;10.10;0.60;g/kg;%;Convertido (1.01% ? 10.1 g/kg)
+P;Kumar et al. (2023);C3B4;11.00;0.80;g/kg;%;Convertido (1.10% ? 11.0 g/kg)
+P;Kumar et al. (2023);C3B6;9.30;0.30;g/kg;%;Convertido (0.93% ? 9.3 g/kg)
+P;Quadar et al. (2022);CH0 (Initial);10.80;0.40;g/kg;%;Convertido (1.08% ? 10.8 g/kg)
+P;Quadar et al. (2022);CH0 (Final);17.80;0.40;g/kg;%;Convertido (1.78% ? 17.8 g/kg)
+P;Quadar et al. (2022);CH25 (Initial);9.30;0.00;g/kg;%;Convertido (0.93% ? 9.3 g/kg)
+P;Quadar et al. (2022);CH25 (Final);13.00;1.40;g/kg;%;Convertido (1.30% ? 13.0 g/kg)
+P;Quadar et al. (2022);CH50 (Initial);6.70;0.60;g/kg;%;Convertido (0.67% ? 6.7 g/kg)
+P;Quadar et al. (2022);CH50 (Final);10.80;0.00;g/kg;%;Convertido (1.08% ? 10.8 g/kg)
+P;Quadar et al. (2022);CH75 (Initial);3.40;0.10;g/kg;%;Convertido (0.34% ? 3.4 g/kg)
+P;Quadar et al. (2022);CH75 (Final);8.70;0.20;g/kg;%;Convertido (0.87% ? 8.7 g/kg)
+P;Quadar et al. (2022);CH100 (Initial);2.10;0.10;g/kg;%;Convertido (0.21% ? 2.1 g/kg)
+P;Quadar et al. (2022);CH100 (Final);4.10;0.30;g/kg;%;Convertido (0.41% ? 4.1 g/kg)
+P;Srivastava et al. (2020);T1 (Initial);6.48;0.13;g/kg;g/kg;-
+P;Srivastava et al. (2020);T1 (Final);11.85;0.03;g/kg;g/kg;-
+P;Srivastava et al. (2020);T2 (Initial);9.33;1.72;g/kg;g/kg;-
+P;Srivastava et al. (2020);T2 (Final);12.51;0.04;g/kg;g/kg;-
+P;Srivastava et al. (2020);T3 (Initial);10.14;0.01;g/kg;g/kg;-
+P;Srivastava et al. (2020);T3 (Final);16.64;0.06;g/kg;g/kg;-
+P;Srivastava et al. (2020);T4 (Initial);9.52;0.05;g/kg;g/kg;-
+P;Srivastava et al. (2020);T4 (Final);12.75;0.13;g/kg;g/kg;-
+P;Santana et al. (2020);Fresh Grape Marc;4.03;0.08;g/kg;g/kg;-
+P;Santana et al. (2020);15 days;5.13;0.45;g/kg;g/kg;-
+P;Santana et al. (2020);30 days;6.27;0.77;g/kg;g/kg;-
+P;Santana et al. (2020);180 days;5.44;2.20;g/kg;g/kg;-
+P;Santana et al. (2020);360 days;4.30;1.10;g/kg;g/kg;-
+P;Santana et al. (2020);540 days;3.85;0.96;g/kg;g/kg;-
+P;Santana et al. (2020);720 days;3.71;0.99;g/kg;g/kg;-
+K;Ramos et al. (2024);Manure;19.20;0.60;g/kg;g/kg;-
+K;Ramos et al. (2024);15 days;19.00;0.80;g/kg;g/kg;-
+K;Ramos et al. (2024);30 days;18.90;0.60;g/kg;g/kg;-
+K;Ramos et al. (2024);45 days;17.80;1.80;g/kg;g/kg;-
+K;Ramos et al. (2024);60 days;20.20;0.60;g/kg;g/kg;-
+K;Ramos et al. (2024);120 days;22.60;0.70;g/kg;g/kg;-
+K;Kumar et al. (2023);C1B0;14.30;2.10;g/kg;%;Convertido (1.43% ? 14.3 g/kg)
+K;Kumar et al. (2023);C1B2;15.50;2.80;g/kg;%;Convertido (1.55% ? 15.5 g/kg)
+K;Kumar et al. (2023);C1B4;16.70;3.10;g/kg;%;Convertido (1.67% ? 16.7 g/kg)
+K;Kumar et al. (2023);C1B6;14.80;2.40;g/kg;%;Convertido (1.48% ? 14.8 g/kg)
+K;Kumar et al. (2023);C2B0;13.20;1.90;g/kg;%;Convertido (1.32% ? 13.2 g/kg)
+K;Kumar et al. (2023);C2B2;14.00;2.20;g/kg;%;Convertido (1.40% ? 14.0 g/kg)
+K;Kumar et al. (2023);C2B4;14.50;2.50;g/kg;%;Convertido (1.45% ? 14.5 g/kg)
+K;Kumar et al. (2023);C2B6;13.50;1.80;g/kg;%;Convertido (1.35% ? 13.5 g/kg)
+K;Kumar et al. (2023);C3B0;13.10;1.50;g/kg;%;Convertido (1.31% ? 13.1 g/kg)
+K;Kumar et al. (2023);C3B2;14.50;2.20;g/kg;%;Convertido (1.45% ? 14.5 g/kg)
+K;Kumar et al. (2023);C3B4;16.40;3.00;g/kg;%;Convertido (1.64% ? 16.4 g/kg)
+K;Kumar et al. (2023);C3B6;13.60;2.10;g/kg;%;Convertido (1.36% ? 13.6 g/kg)
+K;Quadar et al. (2022);CH0 (Initial);19.60;0.00;g/kg;%;Convertido (1.96% ? 19.6 g/kg)
+K;Quadar et al. (2022);CH0 (Final);21.00;0.40;g/kg;%;Convertido (2.10% ? 21.0 g/kg)
+K;Quadar et al. (2022);CH25 (Initial);21.70;0.60;g/kg;%;Convertido (2.17% ? 21.7 g/kg)
+K;Quadar et al. (2022);CH25 (Final);23.50;0.00;g/kg;%;Convertido (2.35% ? 23.5 g/kg)
+K;Quadar et al. (2022);CH50 (Initial);24.60;0.50;g/kg;%;Convertido (2.46% ? 24.6 g/kg)
+K;Quadar et al. (2022);CH50 (Final);27.30;0.30;g/kg;%;Convertido (2.73% ? 27.3 g/kg)
+K;Quadar et al. (2022);CH75 (Initial);26.20;0.00;g/kg;%;Convertido (2.62% ? 26.2 g/kg)
+K;Quadar et al. (2022);CH75 (Final);29.10;0.40;g/kg;%;Convertido (2.91% ? 29.1 g/kg)
+K;Quadar et al. (2022);CH100 (Initial);29.20;0.40;g/kg;%;Convertido (2.92% ? 29.2 g/kg)
+K;Quadar et al. (2022);CH100 (Final);32.70;0.00;g/kg;%;Convertido (3.27% ? 32.7 g/kg)
+K;Srivastava et al. (2020);T1 (Initial);12.44;0.00;g/kg;g/kg;-
+K;Srivastava et al. (2020);T1 (Final);17.18;0.03;g/kg;g/kg;-
+K;Srivastava et al. (2020);T2 (Initial);14.44;0.16;g/kg;g/kg;-
+K;Srivastava et al. (2020);T2 (Final);18.13;0.10;g/kg;g/kg;-
+K;Srivastava et al. (2020);T3 (Initial);13.15;0.09;g/kg;g/kg;-
+K;Srivastava et al. (2020);T3 (Final);19.78;0.20;g/kg;g/kg;-
+K;Srivastava et al. (2020);T4 (Initial);14.31;0.12;g/kg;g/kg;-
+K;Srivastava et al. (2020);T4 (Final);18.89;0.07;g/kg;g/kg;-
+K;Santana et al. (2020);Fresh Grape Marc;30.46;0.56;g/kg;g/kg;-
+K;Santana et al. (2020);15 days;24.97;3.47;g/kg;g/kg;-
+K;Santana et al. (2020);30 days;24.77;3.48;g/kg;g/kg;-
+K;Santana et al. (2020);180 days;20.29;7.36;g/kg;g/kg;-
+K;Santana et al. (2020);360 days;17.34;4.57;g/kg;g/kg;-
+K;Santana et al. (2020);540 days;23.05;4.64;g/kg;g/kg;-
+K;Santana et al. (2020);720 days;15.62;4.40;g/kg;g/kg;-
+C/N;Ramos et al. (2024);Manure;15.00;0.40;-;-;-
+C/N;Ramos et al. (2024);15 days;13.60;0.20;-;-;-
+C/N;Ramos et al. (2024);30 days;12.70;0.10;-;-;-
+C/N;Ramos et al. (2024);45 days;12.50;0.10;-;-;-
+C/N;Ramos et al. (2024);60 days;11.90;0.20;-;-;-
+C/N;Ramos et al. (2024);120 days;13.80;0.30;-;-;-
+C/N;Kumar et al. (2023);C1B0;23.86;1.13;-;-;-
+C/N;Kumar et al. (2023);C1B2;19.92;1.03;-;-;-
+C/N;Kumar et al. (2023);C1B4;18.14;1.07;-;-;-
+C/N;Kumar et al. (2023);C1B6;28.33;1.52;-;-;-
+C/N;Kumar et al. (2023);C2B0;27.28;1.44;-;-;-
+C/N;Kumar et al. (2023);C2B2;24.84;1.55;-;-;-
+C/N;Kumar et al. (2023);C2B4;25.66;1.47;-;-;-
+C/N;Kumar et al. (2023);C2B6;30.76;1.98;-;-;-
+C/N;Kumar et al. (2023);C3B0;38.56;1.87;-;-;-
+C/N;Kumar et al. (2023);C3B2;31.75;1.45;-;-;-
+C/N;Kumar et al. (2023);C3B4;29.19;1.23;-;-;-
+C/N;Kumar et al. (2023);C3B6;42.85;2.02;-;-;-
+C/N;Quadar et al. (2022);CH0 (Initial);19.04;1.00;-;-;-
+C/N;Quadar et al. (2022);CH0 (Final);11.68;0.45;-;-;-
+C/N;Quadar et al. (2022);CH25 (Initial);34.05;0.45;-;-;-
+C/N;Quadar et al. (2022);CH25 (Final);16.91;0.42;-;-;-
+C/N;Quadar et al. (2022);CH50 (Initial);43.56;0.41;-;-;-
+C/N;Quadar et al. (2022);CH50 (Final);19.20;0.10;-;-;-
+C/N;Quadar et al. (2022);CH75 (Initial);56.66;0.57;-;-;-
+C/N;Quadar et al. (2022);CH75 (Final);26.76;1.07;-;-;-
+C/N;Quadar et al. (2022);CH100 (Initial);59.91;0.67;-;-;-
+C/N;Quadar et al. (2022);CH100 (Final);28.40;0.76;-;-;-
+C/N;Srivastava et al. (2020);T1 (Initial);67.72;3.68;-;-;-
+C/N;Srivastava et al. (2020);T1 (Final);30.84;1.21;-;-;-
+C/N;Srivastava et al. (2020);T2 (Initial);45.93;0.91;-;-;-
+C/N;Srivastava et al. (2020);T2 (Final);24.34;0.08;-;-;-
+C/N;Srivastava et al. (2020);T3 (Initial);54.12;0.78;-;-;-
+C/N;Srivastava et al. (2020);T3 (Final);21.48;0.36;-;-;-
+C/N;Srivastava et al. (2020);T4 (Initial);49.61;0.30;-;-;-
+C/N;Srivastava et al. (2020);T4 (Final);24.35;0.17;-;-;-
+C/N;Santana et al. (2020);Fresh Grape Marc;24.02;0.72;-;-;-
+C/N;Santana et al. (2020);15 days;12.07;0.93;-;-;-
+C/N;Santana et al. (2020);30 days;11.56;0.35;-;-;-
+C/N;Santana et al. (2020);180 days;11.59;1.30;-;-;-
+C/N;Santana et al. (2020);360 days;11.80;1.30;-;-;-
+C/N;Santana et al. (2020);540 days;11.61;0.81;-;-;-
+C/N;Santana et al. (2020);720 days;11.65;0.83;-;-;-
 This is a placeholder. Replace with your actual data.
