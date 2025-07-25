@@ -27,6 +27,14 @@ It automatically loads data from `csv.csv` and performs analysis using weighted
 regression models (WLS) to estimate log-response ratios (lnRR).
 """)
 
+# --- Added Results Overview Section ---
+st.markdown("""
+**Results Overview:** Our meta-analysis delved into **217 distinct treatments**,
+with **vermicompost derived from cattle manure** serving as the foundational control.
+Key findings highlight that **banana residue** significantly influenced the **electrical conductivity (EC)** of the vermicompost,
+while **grape marc** showed a marked impact on its **nitrogen (N) content**.
+""")
+
 # --- New Section: 1. PRISMA Flow Diagram ---
 st.header("1. PRISMA Flow Diagram: Study Identification and Selection")
 
