@@ -20,34 +20,46 @@ st.title("🌱 Vermicompost Meta-Analysis: Effect of Different Residues")
 
 st.markdown("""
 This application performs a meta-analysis to evaluate the effect of different residues on vermicompost quality.
-Upload your data (a CSV file) to begin the analysis.
+You can either upload your own data or use the pre-loaded example data.
 """)
 
-# --- Data Upload ---
-st.header("1. Upload Data")
-uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
+# --- Data Upload / Loading ---
+st.header("1. Load Data")
+
+uploaded_file = st.file_uploader("Choose a CSV file to upload (optional)", type="csv")
 
 dados_meta_analysis = pd.DataFrame() # Initialize empty DataFrame
+file_path_to_process = None
 
 if uploaded_file is not None:
-    # Save the uploaded file to the 'data' directory
-    # (or directly process if preferred, but saving helps for consistency with local setup)
+    # If a file is uploaded, save it and set its path
     if not os.path.exists("data"):
         os.makedirs("data")
-    
-    file_path = os.path.join("data", "uploaded_data.csv")
-    with open(file_path, "wb") as f:
+    temp_file_path = os.path.join("data", "uploaded_data.csv")
+    with open(temp_file_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
-    
+    file_path_to_process = temp_file_path
     st.success("File uploaded successfully! Processing data...")
+else:
+    # If no file is uploaded, try to use the example file from the repo
+    # Make sure 'data/example.csv' exists in your GitHub repo!
+    # If your file is named csv.csv, ensure it's in data/csv.csv and adjust this path
+    default_file_path = os.path.join("data", "csv.csv") # <--- ALTERADO AQUI: 'csv.csv' ao invés de 'example.csv'
+    if os.path.exists(default_file_path):
+        file_path_to_process = default_file_path
+        st.info("No file uploaded. Using the example data from the repository.")
+    else:
+        st.warning(f"No default data found at '{default_file_path}'. Please upload a CSV file.")
 
+
+if file_path_to_process:
     # --- Data Processing Pipeline ---
-    dados = load_and_prepare_data(file_path)
+    dados = load_and_prepare_data(file_path_to_process)
     if not dados.empty:
         dados_filtrados = filter_irrelevant_treatments(dados)
         dados_grupos = define_groups_and_residues(dados_filtrados)
         dados_meta_analysis = prepare_for_meta_analysis(dados_grupos)
-        
+
         if dados_meta_analysis.empty:
             st.warning("Not enough data to perform meta-analysis after filtering and preparation.")
         else:
@@ -55,9 +67,9 @@ if uploaded_file is not None:
             st.subheader("Prepared Data Sample:")
             st.dataframe(dados_meta_analysis.head())
     else:
-        st.error("Could not load or process data from the uploaded file. Please check the file format.")
+        st.error("Could not load or process data. Please check the file format or default data.")
 else:
-    st.info("Please upload a CSV file to proceed with the analysis.")
+    st.info("Please upload a CSV file or ensure default data is available in the 'data/' directory to proceed with the analysis.")
 
 st.markdown("---")
 
@@ -118,7 +130,7 @@ if not dados_meta_analysis.empty:
                     st.pyplot(fig_forest)
                 else:
                     st.warning("Could not generate Forest Plot. Check data sufficiency.")
-    
+
     with col_funnel:
         if st.button("🧪 Generate Funnel Plot"):
             st.subheader("Funnel Plot for Publication Bias")
