@@ -10,39 +10,64 @@ import os
 
 def load_and_prepare_data(file_path):
     """
-    Carrega o arquivo CSV e realiza a preparação inicial dos dados.
-    Assume que o CSV usa ';' como separador e '.' como decimal.
-    Retorna um DataFrame vazio em caso de erro de leitura.
+    Carrega o arquivo Excel e realiza a preparação inicial dos dados.
+    Retorna um DataFrame vazio em caso de erro de leitura ou processamento.
     """
+    dados = pd.DataFrame()
+    
     try:
-        dados = pd.read_csv(file_path, sep=';', decimal='.')
+        # ALTERAÇÃO AQUI: Mude para pd.read_excel
+        dados = pd.read_excel(file_path) # read_excel geralmente infere bem os tipos e separadores
+        print(f"Successfully loaded data from: {file_path}") # Log para verificar
+    except FileNotFoundError:
+        print(f"Error: The file '{file_path}' was not found.")
+        return pd.DataFrame()
+    except Exception as e:
+        print(f"Error loading Excel file '{file_path}': {e}")
+        return pd.DataFrame()
+
+    try:
         # Renomear colunas para consistência e facilitar o acesso
+        # Certifique-se de que os nomes das colunas no Excel são EXATAMENTE esses
         dados = dados.rename(columns={
+            'Variable': 'Variable',
+            'Study': 'Study',
+            'Treatment': 'Treatment',
             'Mean': 'Mean',
             'Std Dev': 'Std_Dev',
-            'Treatments': 'Treatment',
-            'Residues': 'Residue',
-            'Variables': 'Variable'
+            'Unit': 'Unit',
+            'Original Unit': 'Original Unit',
+            'Notes': 'Notes'
         })
         # Converter colunas numéricas, forçando erros para NaN
         dados['Mean'] = pd.to_numeric(dados['Mean'], errors='coerce')
         dados['Std_Dev'] = pd.to_numeric(dados['Std_Dev'], errors='coerce')
 
         # Substituir 0 em Std_Dev por um valor pequeno para evitar divisão por zero
+        # 0.001 é um valor arbitrário, ajuste se necessário para seu contexto
         dados['Std_Dev'] = dados['Std_Dev'].replace(0, 0.001)
 
         # Remover linhas com valores NaN nas colunas críticas após a conversão
-        dados.dropna(subset=['Mean', 'Std_Dev', 'Treatment', 'Variable', 'Residue'], inplace=True)
+        dados.dropna(subset=['Mean', 'Std_Dev', 'Treatment', 'Variable', 'Study'], inplace=True) # Adicionei 'Study' aqui
+        
+        # Verificar se o DataFrame ficou vazio após as operações
+        if dados.empty:
+            print("DataFrame became empty after numeric conversion and dropping rows with missing critical data.")
+            return pd.DataFrame()
+            
+        print("Data preparation successful.")
         return dados
     except Exception as e:
-        # Não usar st.error aqui. O app.py irá lidar com o DataFrame vazio.
+        print(f"Error during data preparation after initial load for '{file_path}': {e}")
         return pd.DataFrame()
+
 
 def filter_irrelevant_treatments(df):
     """
     Filtra tratamentos irrelevantes para a meta-análise de vermicompostagem.
     """
     # Lista de tratamentos a serem excluídos (não são vermicompostos finais)
+    # Lista atualizada para incluir termos gerais e específicos para evitar erros
     tratamentos_excluir = [
         'Fresh Grape Marc', 'Manure', 'Initial Vermicompost',
         'Initial Grape Marc', 'Initial Soil', 'Initial Sewage Sludge',
@@ -55,7 +80,9 @@ def filter_irrelevant_treatments(df):
         'Initial Paper Waste', 'Initial Food Waste',
         'Initial Brewery Waste', 'Initial Distillery Waste',
         'Initial Industrial Waste', 'Initial Livestock Waste',
-        'Initial Agro-waste', 'Initial Slurry'
+        'Initial Agro-waste', 'Initial Slurry',
+        'CH0 (Initial)', 'CH25 (Initial)', 'CH50 (Initial)', 'CH75 (Initial)', 'CH100 (Initial)',
+        'T1 (Initial)', 'T2 (Initial)', 'T3 (Initial)', 'T4 (Initial)'
     ]
     df_filtered = df[~df['Treatment'].isin(tratamentos_excluir)].copy()
     return df_filtered
@@ -77,7 +104,7 @@ def define_groups_and_residues(df):
         residue = str(row['Residue']).lower()
         if 'sewage' in residue or 'sludge' in residue or 'municipal' in residue or 'waste' in residue or 'industrial' in residue or 'brewery' in residue or 'distillery' in residue:
             return 'Sewage Sludge/Industrial Waste'
-        elif 'grape' in residue or 'fruit' in residue or 'vegetable' in residue or 'pineapple' in residue or 'coffee' in residue or 'sugarcane' in residue or 'paddy' in residue or 'rice' in residue or 'corn' in residue or 'leaf' in residue or 'agro-waste' in residue or 'livestock' in residue or 'manure' in residue or 'straw' in residue:
+        elif 'grape' in residue or 'fruit' in residue or 'vegetable' in residue or 'pineapple' in residue or 'coffee' in residue or 'sugarcane' in residue or 'paddy' in residue or 'rice' in residue or 'corn' in residue or 'leaf' in residue or 'agro-waste' in residue or 'livestock' in residue or 'manure' in residue or 'straw' in residue or 'abacaxi' in residue:
             return 'Agricultural Residue'
         elif 'paper' in residue or 'wood' in residue or 'lignin' in residue:
             return 'Paper/Wood Waste'
@@ -108,12 +135,14 @@ def prepare_for_meta_analysis(df_groups):
             # Em meta-análise complexa, pode-se usar média de controles ou abordar múltiplas comparações.
             control_mean = control_data['Mean'].iloc[0]
             control_sd = control_data['Std_Dev'].iloc[0]
-            control_n = control_data['N'].iloc[0] if 'N' in control_data.columns else 10 # Default N if not available
+            # Usar N padrão se a coluna 'N' não existir
+            control_n = control_data['N'].iloc[0] if 'N' in control_data.columns and not control_data['N'].empty else 10
 
             for index, row in treatment_data.iterrows():
                 treatment_mean = row['Mean']
                 treatment_sd = row['Std_Dev']
-                treatment_n = row['N'] if 'N' in treatment_data.columns else 10 # Default N if not available
+                # Usar N padrão se a coluna 'N' não existir
+                treatment_n = row['N'] if 'N' in treatment_data.columns and not row['N'].empty else 10
 
                 # Evitar divisões por zero ou log(0)
                 if control_mean == 0:
@@ -168,26 +197,37 @@ def run_meta_analysis_and_plot(data, model_type="Residue"):
     model = None
     if model_type == "Residue":
         formula = 'lnRR ~ C(Residue_Type)'
-        if 'Other' in data['Residue_Type'].unique() and len(data['Residue_Type'].unique()) > 1:
+        # Verifica se há mais de um tipo de resíduo para evitar erro de singularidade
+        if len(data['Residue_Type'].unique()) > 1:
             model = sm.WLS.from_formula(formula, data=data, weights=1/data['var_lnRR'])
         else:
-            model = sm.WLS.from_formula(formula, data=data, weights=1/data['var_lnRR'])
-
+            print("Warning: Only one residue type found, cannot run regression by Residue Type.")
+            return pd.DataFrame(), None # Retorna vazio se não houver variação suficiente
+            
     elif model_type == "Variable":
         formula = 'lnRR ~ C(Variable)'
-        model = sm.WLS.from_formula(formula, data=data, weights=1/data['var_lnRR'])
+        if len(data['Variable'].unique()) > 1:
+            model = sm.WLS.from_formula(formula, data=data, weights=1/data['var_lnRR'])
+        else:
+            print("Warning: Only one variable type found, cannot run regression by Variable.")
+            return pd.DataFrame(), None # Retorna vazio se não houver variação suficiente
 
     elif model_type == "Interaction":
         formula = 'lnRR ~ C(Residue_Type) * C(Variable)'
-        model = sm.WLS.from_formula(formula, data=data, weights=1/data['var_lnRR'])
+        # Precisa de múltiplos tipos de resíduo E múltiplas variáveis para interação
+        if len(data['Residue_Type'].unique()) > 1 and len(data['Variable'].unique()) > 1:
+            model = sm.WLS.from_formula(formula, data=data, weights=1/data['var_lnRR'])
+        else:
+            print("Warning: Not enough unique Residue Types or Variables for interaction analysis.")
+            return pd.DataFrame(), None # Retorna vazio se não houver variação suficiente
     else:
-        # Não usar st.error aqui
+        print(f"Invalid model type: {model_type}")
         return pd.DataFrame(), None
 
     try:
         results = model.fit()
     except Exception as e:
-        # Não usar st.error aqui, apenas retornar DataFrame vazio e None para o gráfico
+        print(f"Error fitting WLS model for {model_type}: {e}")
         return pd.DataFrame(), None
 
     # Criar DataFrame de resumo para exibição
@@ -200,11 +240,19 @@ def run_meta_analysis_and_plot(data, model_type="Residue"):
     fig, ax = plt.subplots(figsize=(10, 6))
 
     # Linha vertical no zero (ponto de nenhum efeito)
-    ax.axvline(x=0, linestyle="dashed", color="red") # CORREÇÃO APLICADA AQUI
+    ax.axvline(x=0, linestyle="dashed", color="red")
 
-    # Plotar coeficientes (excluindo o intercepto se for um modelo categórico)
-    # Filtra o intercepto se for um modelo que usa C() para categóricas
-    plot_data = summary_df[~summary_df['term'].str.contains('Intercept|C\(', na=False)] # Filtra o intercepto e os termos C()
+    # Plotar coeficientes (excluindo o intercepto e termos gerados automaticamente pelo C())
+    # Filtra o intercepto e os termos C() que representam as categorias base
+    plot_data = summary_df[~summary_df['term'].str.contains('Intercept|C\(', na=False)]
+    
+    # Adiciona os termos do intercepto apenas se não houver outros termos para plotar, ou se for relevante
+    # Para modelos com C(), o intercepto é a categoria base e os outros coeficientes são diferenças em relação a ela.
+    # Pode ser mais útil plotar apenas os coeficientes das categorias não-base.
+    
+    if plot_data.empty and not summary_df.empty:
+        # Fallback: Se não há termos de comparação, mas há um intercepto, plote o intercepto
+        plot_data = summary_df[summary_df['term'] == 'const'] # Se 'const' for o intercepto
 
     # Reordenar para melhor visualização
     plot_data = plot_data.sort_values(by='estimate')
@@ -226,7 +274,7 @@ def generate_forest_plot(data):
     Gera um Forest Plot básico para efeitos individuais.
     """
     if data.empty or 'lnRR' not in data.columns or 'var_lnRR' not in data.columns:
-        # Não usar st.warning aqui
+        print("Data is empty or missing required columns for Forest Plot.")
         return None
 
     # Calculate standard error from variance
@@ -266,7 +314,7 @@ def generate_funnel_plot(data):
     Gera um Funnel Plot básico para avaliar viés de publicação.
     """
     if data.empty or 'lnRR' not in data.columns or 'var_lnRR' not in data.columns:
-        # Não usar st.warning aqui
+        print("Data is empty or missing required columns for Funnel Plot.")
         return None
 
     # Precisão (precision) é o inverso do erro padrão
