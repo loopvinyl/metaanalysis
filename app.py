@@ -27,102 +27,121 @@ It automatically loads data from 'csv.csv' for analysis.
 st.header("1. Data Loading and Preparation")
 st.write("Loading data from 'csv.csv'...")
 
-dados_meta_analysis = pd.DataFrame()  # Initialize empty DataFrame
+dados_meta_analysis = pd.DataFrame()
 
 try:
-    # --- Data Processing Pipeline ---
-    dados = load_and_prepare_data("csv.csv")
-    if not dados.empty:
-        dados_filtrados = filter_irrelevant_treatments(dados)
-        dados_grupos = define_groups_and_residues(dados_filtrados)
-        dados_meta_analysis = prepare_for_meta_analysis(dados_grupos)
-        
-        if dados_meta_analysis.empty:
-            st.warning("Insufficient data for meta-analysis after filtering and preparation.")
-        else:
-            st.success(f"Data prepared for meta-analysis. {len(dados_meta_analysis)} records available.")
-            st.subheader("Prepared Data Sample:")
-            st.dataframe(dados_meta_analysis.head())
+    # Check file exists
+    if not os.path.exists("csv.csv"):
+        st.error("Error: 'csv.csv' not found in the root directory.")
+        st.info("Please ensure the file is in the same directory as the application.")
     else:
-        st.error("Could not load or process data from 'csv.csv'. Please check the file format and ensure it uses ';' as delimiter and '.' as decimal separator.")
-except FileNotFoundError:
-    st.error("File 'csv.csv' not found. Please ensure it is in the root directory.")
+        # Show file preview
+        with open("csv.csv", 'r') as f:
+            preview_lines = [next(f) for _ in range(3)]
+        st.code("File preview (first 3 lines):\n" + "".join(preview_lines))
+        
+        # Process data
+        dados = load_and_prepare_data("csv.csv")
+        
+        if not dados.empty:
+            st.success(f"Data loaded successfully! Initial records: {len(dados)}")
+            
+            # Processing pipeline
+            dados_filtrados = filter_irrelevant_treatments(dados)
+            st.write(f"After treatment filtering: {len(dados_filtrados)} records")
+            
+            dados_grupos = define_groups_and_residues(dados_filtrados)
+            dados_meta_analysis = prepare_for_meta_analysis(dados_grupos)
+            
+            if not dados_meta_analysis.empty:
+                st.success(f"Data prepared for meta-analysis. {len(dados_meta_analysis)} records available.")
+                st.subheader("Sample of Prepared Data:")
+                st.dataframe(dados_meta_analysis.head())
+            else:
+                st.warning("Insufficient data for meta-analysis after processing.")
+        else:
+            st.error("Could not process the data. Please check:")
+            st.error("- File uses semicolons (;) as delimiters")
+            st.error("- File uses periods (.) for decimals")
+            st.error("- Required columns exist: Study, Treatment, Variable, Mean, Std Dev")
 
-st.markdown("---")
+except Exception as e:
+    st.error(f"An error occurred: {str(e)}")
 
 # --- Meta-Analysis Section ---
-st.header("2. Run Meta-Analysis Models & Generate Plots")
-
 if not dados_meta_analysis.empty:
-    st.markdown("Select a model to run and visualize its results. All outputs are in academic English suitable for publication.")
+    st.header("2. Meta-Analysis Models")
+    st.markdown("""
+    Select a model to analyze the effects of residues and variables on vermicompost quality.
+    All outputs are in academic English suitable for publication.
+    """)
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
         if st.button("📈 Analyze by Residue Type"):
-            st.subheader("Meta-Analysis by Residue Type")
-            with st.spinner("Calculating..."):
-                summary_df, fig = run_meta_analysis_and_plot(dados_meta_analysis, model_type="Residue")
+            with st.spinner("Running residue type analysis..."):
+                summary_df, fig = run_meta_analysis_and_plot(dados_meta_analysis, "Residue")
                 if fig:
+                    st.subheader("Residue Type Effects")
                     st.pyplot(fig)
-                    st.subheader("Model Summary (Residue Type)")
                     st.dataframe(summary_df.set_index('term'))
-                    st.caption("Note: Effects represent Log Response Ratio (lnRR) compared to control. Positive values indicate higher values in treatment groups.")
-                else:
-                    st.warning("Insufficient data for residue type analysis.")
+                    st.caption("""
+                    Effect sizes (lnRR) for different residue types. 
+                    Positive values indicate higher values compared to control.
+                    """)
 
     with col2:
         if st.button("📊 Analyze by Variable"):
-            st.subheader("Meta-Analysis by Variable")
-            with st.spinner("Calculating..."):
-                summary_df, fig = run_meta_analysis_and_plot(dados_meta_analysis, model_type="Variable")
+            with st.spinner("Running variable analysis..."):
+                summary_df, fig = run_meta_analysis_and_plot(dados_meta_analysis, "Variable")
                 if fig:
+                    st.subheader("Variable Effects")
                     st.pyplot(fig)
-                    st.subheader("Model Summary (Variable)")
                     st.dataframe(summary_df.set_index('term'))
-                else:
-                    st.warning("Insufficient data for variable analysis.")
 
     with col3:
-        if st.button("🔗 Analyze Interaction (Residue × Variable)"):
-            st.subheader("Meta-Analysis of Residue × Variable Interaction")
-            with st.spinner("Calculating..."):
-                summary_df, fig = run_meta_analysis_and_plot(dados_meta_analysis, model_type="Interaction")
+        if st.button("🔗 Analyze Interaction"):
+            with st.spinner("Running interaction analysis..."):
+                summary_df, fig = run_meta_analysis_and_plot(dados_meta_analysis, "Interaction")
                 if fig:
+                    st.subheader("Residue × Variable Interactions")
                     st.pyplot(fig)
-                    st.subheader("Model Summary (Interaction)")
                     st.dataframe(summary_df.set_index('term'))
-                else:
-                    st.warning("Insufficient data for interaction analysis.")
 
-    st.markdown("---")
-    st.header("3. Additional Diagnostic Plots")
+    # Diagnostic Plots
+    st.header("3. Diagnostic Plots")
+    st.markdown("Generate additional plots to assess results and potential biases.")
 
     col_forest, col_funnel = st.columns(2)
     with col_forest:
         if st.button("🌳 Generate Forest Plot"):
-            st.subheader("Forest Plot of Individual Studies")
-            with st.spinner("Generating..."):
-                fig_forest = generate_forest_plot(dados_meta_analysis)
-                if fig_forest:
-                    st.pyplot(fig_forest)
-                    st.caption("Forest plot showing effect sizes (lnRR) with 95% confidence intervals for individual studies.")
-                else:
-                    st.warning("Could not generate forest plot. Check data sufficiency.")
-    
+            with st.spinner("Creating forest plot..."):
+                fig = generate_forest_plot(dados_meta_analysis)
+                if fig:
+                    st.subheader("Forest Plot")
+                    st.pyplot(fig)
+                    st.caption("""
+                    Forest plot showing effect sizes (lnRR) with 95% confidence intervals 
+                    for individual studies.
+                    """)
+
     with col_funnel:
         if st.button("🧪 Generate Funnel Plot"):
-            st.subheader("Funnel Plot for Publication Bias Assessment")
-            with st.spinner("Generating..."):
-                fig_funnel = generate_funnel_plot(dados_meta_analysis)
-                if fig_funnel:
-                    st.pyplot(fig_funnel)
-                    st.caption("Funnel plot for assessing potential publication bias. Asymmetry may indicate bias.")
-                else:
-                    st.warning("Could not generate funnel plot. Check data sufficiency.")
+            with st.spinner("Creating funnel plot..."):
+                fig = generate_funnel_plot(dados_meta_analysis)
+                if fig:
+                    st.subheader("Funnel Plot")
+                    st.pyplot(fig)
+                    st.caption("""
+                    Funnel plot for assessing publication bias. Asymmetry may indicate bias.
+                    """)
 
 else:
-    st.info("Please ensure 'csv.csv' is in the correct directory and was processed successfully (with at least 2 records) to proceed with analysis.")
+    st.info("Please ensure the data is loaded and processed successfully to run analyses.")
 
 st.markdown("---")
-st.markdown("🔬 Developed using Streamlit and Python for meta-analysis of vermicompost quality. Academic English output suitable for publication.")
+st.markdown("""
+🔬 Developed for academic research using Streamlit and Python.  
+All outputs are in English suitable for publication.
+""")
