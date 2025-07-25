@@ -10,7 +10,7 @@ from meta_analysis import (
     define_groups_and_residues,
     prepare_for_meta_analysis,
     run_meta_analysis_and_plot,
-    generate_forest_plot, # Ensure this is used if needed, otherwise it can be removed
+    generate_forest_plot,
     generate_funnel_plot
 )
 
@@ -28,64 +28,8 @@ It automatically loads data from `csv.csv` and performs analysis using weighted 
 # --- Data Loading and Preparation ---
 st.header("1. Data Loading and Preparation")
 
-# Texto sobre a busca sistemática
-st.markdown("""
-Para compilar os dados para esta meta-análise, realizamos uma busca sistemática nas bases de dados **Scopus**, **Web of Science** e **PubMed**. A estratégia de busca utilizada foi:
-`"vermicomposting" AND ("characterization of vermicompost" OR "Chemical and physical variables" OR "Physico-chemical characterization" OR "Nutrient dynamics")`
-
-A identificação e seleção dos estudos seguiram o seguinte fluxo:
-""")
-
-# --- FLUXOGRAMA DE IDENTIFICAÇÃO E SELEÇÃO DE ESTUDOS ---
-st.subheader("Flowchart: Study Identification and Selection")
-
-st.markdown("""
-**Records identified from*:**
-* Databases (n = 125)
-    * Scopus (n = 48)
-    * Web of Science (n = 8)
-    * PubMed (n = 69)
-* Registers (n = 0)
-
-**Records removed before screening:**
-* Duplicate records removed (n = 1)
-* Records marked as ineligible by automation tools (n = 0)
-* Records removed for other reasons (n = 0)
-
----
-
-**Records screened (n = 124)**
-* **Records excluded** (n = 119)
-    * Missing key variables (pH, CE, TOC/MO, P, K, N, C/N) (n = 117)
-    * Non-primary literature (reviews/book chapters) (n = 2)
-
----
-
-**Reports sought for retrieval (n = 5)**
-* Reports not retrieved (n = 0)
-
----
-
-**Reports assessed for eligibility (n = 5)**
-* **Reports excluded:**
-    * Insufficient data reporting (n = 0)
-    * Other reasons (n = 0)
-
----
-
-**Studies included in review (n = 5)**
-* Reports of included studies (n = 5)
-    * Ramos et al. (2024)
-    * Kumar et al. (2023)
-    * Quadar et al. (2022)
-    * Srivastava et al. (2020)
-    * Santana et al. (2020)
-""")
-
-st.markdown("---") # Separador visual para o conteúdo da busca sistemática
-
 # Define the path to the CSV file - ADJUSTED TO BE IN THE SAME DIRECTORY AS app.py
-file_path = "csv.csv"
+file_path = "csv.csv" 
 
 dados_meta_analysis = pd.DataFrame() # Initialize empty DataFrame
 
@@ -104,26 +48,23 @@ if os.path.exists(file_path):
         else:
             st.success(f"Data prepared for meta-analysis. {len(dados_meta_analysis)} records available.")
             st.subheader("Prepared Data Sample:")
-            # Exibe o DataFrame completo, não apenas o head()
-            st.dataframe(dados_meta_analysis) # Removido .head() para mostrar tudo
+            st.dataframe(dados_meta_analysis.head())
     else:
         st.error("Could not load or process data from 'csv.csv'. Please check the file format and ensure it uses ';' as a delimiter and '.' as a decimal separator.")
 else:
     st.error("❌ File 'csv.csv' not found in the same directory as 'app.py'. Please place it there and reload the app.")
 
----
-
 # --- Meta-Analysis Modeling and Visualization ---
 st.header("2. Meta-Analysis Modeling and Visualization")
 
 if not dados_meta_analysis.empty and len(dados_meta_analysis) >= 2: # At least 2 records needed for models
-
+    
     st.markdown("Performing meta-analysis for different models:")
 
     # 2.1. Model by residue type
     st.subheader("2.1. Model by Residue Type")
     residue_model_summary_df, residue_coeff_plot_fig = run_meta_analysis_and_plot(
-        dados_meta_analysis,
+        dados_meta_analysis, 
         model_type="Residue",
         plot_title="Effect of Residues on Vermicompost Quality"
     )
@@ -135,7 +76,7 @@ if not dados_meta_analysis.empty and len(dados_meta_analysis) >= 2: # At least 2
     # 2.2. Model by variable
     st.subheader("2.2. Model by Variable")
     variable_model_summary_df, _ = run_meta_analysis_and_plot(
-        dados_meta_analysis,
+        dados_meta_analysis, 
         model_type="Variable",
         plot_title="Effect of Variables on Vermicompost Quality"
     )
@@ -145,7 +86,7 @@ if not dados_meta_analysis.empty and len(dados_meta_analysis) >= 2: # At least 2
     # 2.3. Interaction model (Residue × Variable)
     st.subheader("2.3. Interaction Model (Residue × Variable)")
     interaction_model_summary_df, _ = run_meta_analysis_and_plot(
-        dados_meta_analysis,
+        dados_meta_analysis, 
         model_type="Interaction",
         plot_title="Interaction Effect of Residue and Variable on Vermicompost Quality"
     )
@@ -156,22 +97,20 @@ if not dados_meta_analysis.empty and len(dados_meta_analysis) >= 2: # At least 2
     # Removido o cabeçalho e a lógica de salvamento.
     # st.header("4. Save Results")
     # try:
-    #    # Saving results (models and data)
-    #    with open("meta_analysis_results.pkl", "wb") as f:
-    #        pickle.dump({
+    #     # Saving results (models and data)
+    #     with open("meta_analysis_results.pkl", "wb") as f:
+    #         pickle.dump({
     #             "Residue_Model_Summary": residue_model_summary_df,
-    #            "Variable_Model_Summary": variable_model_summary_df,
-    #            "Interaction_Model_Summary": interaction_model_summary_df,
+    #             "Variable_Model_Summary": variable_model_summary_df,
+    #             "Interaction_Model_Summary": interaction_model_summary_df,
     #             "Data": dados_meta_analysis
     #         }, f)
-    #    st.success("Meta-analysis results saved successfully to `meta_analysis_results.pkl`.")
+    #     st.success("Meta-analysis results saved successfully to `meta_analysis_results.pkl`.")
     # except Exception as e:
-    #    st.error(f"Error saving results: {e}")
+    #     st.error(f"Error saving results: {e}")
 
 else:
     st.info("Please ensure 'csv.csv' is in the same directory as 'app.py' and processed successfully (with at least 2 records) to proceed with the analysis.")
-
----
 
 # --- Diagnostic and Additional Analyses ---
 st.header("3. Diagnostic and Additional Analyses")
@@ -182,14 +121,14 @@ if not dados_meta_analysis.empty and len(dados_meta_analysis) >= 2:
     # 3.1. Analysis by specific variable (e.g., TOC, N, pH, EC)
     st.subheader("3.1. Detailed Analysis for Key Variables")
     important_vars = ["TOC", "N", "pH", "EC"]
-
+    
     for var in important_vars:
         st.markdown(f"#### Analysis for Variable: **{var}**")
         temp_data = dados_meta_analysis[dados_meta_analysis["Variable"] == var]
-
+        
         if len(temp_data) > 1: # At least 2 data points for a meaningful model
             temp_model_summary_df, temp_coeff_plot_fig = run_meta_analysis_and_plot(
-                temp_data,
+                temp_data, 
                 model_type="Residue",
                 plot_title=f"Effect of Residues on {var} in Vermicompost"
             )
