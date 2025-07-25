@@ -34,7 +34,9 @@ def load_and_prepare_data(file_path):
         dados.dropna(subset=['Mean', 'Std_Dev', 'Treatment', 'Variable', 'Residue'], inplace=True)
         return dados
     except Exception as e:
-        st.error(f"Error loading or initially preparing data: {e}")
+        # AQUI FOI REMOVIDO st.error
+        # Em vez disso, a função simplesmente retorna um DataFrame vazio,
+        # e o app.py (seu arquivo principal Streamlit) lida com a exibição do erro.
         return pd.DataFrame()
 
 def filter_irrelevant_treatments(df):
@@ -141,11 +143,11 @@ def prepare_for_meta_analysis(df_groups):
                 })
 
     dados_meta = pd.DataFrame(dados_meta)
-    
+
     # Remover linhas onde lnRR ou var_lnRR são NaN ou infinitos após o cálculo
     dados_meta.replace([np.inf, -np.inf], np.nan, inplace=True)
     dados_meta.dropna(subset=['lnRR', 'var_lnRR'], inplace=True)
-    
+
     return dados_meta
 
 
@@ -158,6 +160,7 @@ def run_meta_analysis_and_plot(data, model_type="Residue"):
     pelo método de regressão. Para heterogeneidade, seriam necessários cálculos adicionais.
     """
     if data.empty:
+        # Não usar st.error aqui, apenas retornar DataFrame vazio e None para o gráfico
         return pd.DataFrame(), None
 
     # Adiciona uma constante para o intercepto
@@ -165,14 +168,10 @@ def run_meta_analysis_and_plot(data, model_type="Residue"):
 
     model = None
     if model_type == "Residue":
-        # Removendo 'Other' para evitar multicolinearidade se for a única categoria base
-        # Ou garantindo que a referência seja tratada implicitamente pelo statsmodels
         formula = 'lnRR ~ C(Residue_Type)'
-        # Para garantir que 'Other' não cause problemas se houver apenas 2 tipos
         if 'Other' in data['Residue_Type'].unique() and len(data['Residue_Type'].unique()) > 1:
-            # Categórica com tratamento de referência (primeira categoria alfabética por padrão ou outra)
             model = sm.WLS.from_formula(formula, data=data, weights=1/data['var_lnRR'])
-        else: # Se 'Other' não existe ou é a única, apenas C(Residue_Type) funciona
+        else:
             model = sm.WLS.from_formula(formula, data=data, weights=1/data['var_lnRR'])
 
     elif model_type == "Variable":
@@ -180,18 +179,16 @@ def run_meta_analysis_and_plot(data, model_type="Residue"):
         model = sm.WLS.from_formula(formula, data=data, weights=1/data['var_lnRR'])
 
     elif model_type == "Interaction":
-        # Interação entre tipo de resíduo e variável
-        # Pode ser complexo e exigir dados suficientes para cada combinação
         formula = 'lnRR ~ C(Residue_Type) * C(Variable)'
         model = sm.WLS.from_formula(formula, data=data, weights=1/data['var_lnRR'])
     else:
-        st.error("Invalid model type specified.")
+        # Não usar st.error aqui
         return pd.DataFrame(), None
 
     try:
         results = model.fit()
     except Exception as e:
-        st.error(f"Error fitting the model: {e}. Not enough data for this combination of variables/residues.")
+        # Não usar st.error aqui, apenas retornar DataFrame vazio e None para o gráfico
         return pd.DataFrame(), None
 
     # Criar DataFrame de resumo para exibição
@@ -204,7 +201,7 @@ def run_meta_analysis_and_plot(data, model_type="Residue"):
     fig, ax = plt.subplots(figsize=(10, 6))
 
     # Linha vertical no zero (ponto de nenhum efeito)
-    ax.axvline(x=0, linestyle="dashed", color="red") # CORREÇÃO APLICADA AQUI
+    ax.axvline(x=0, linestyle="dashed", color="red")
 
     # Plotar coeficientes (excluindo o intercepto se for um modelo categórico)
     # Filtra o intercepto se for um modelo que usa C() para categóricas
@@ -230,7 +227,7 @@ def generate_forest_plot(data):
     Gera um Forest Plot básico para efeitos individuais.
     """
     if data.empty or 'lnRR' not in data.columns or 'var_lnRR' not in data.columns:
-        st.warning("Data is insufficient for Forest Plot. Make sure 'lnRR' and 'var_lnRR' columns exist.")
+        # Não usar st.warning aqui
         return None
 
     # Calculate standard error from variance
@@ -270,7 +267,7 @@ def generate_funnel_plot(data):
     Gera um Funnel Plot básico para avaliar viés de publicação.
     """
     if data.empty or 'lnRR' not in data.columns or 'var_lnRR' not in data.columns:
-        st.warning("Data is insufficient for Funnel Plot. Make sure 'lnRR' and 'var_lnRR' columns exist.")
+        # Não usar st.warning aqui
         return None
 
     # Precisão (precision) é o inverso do erro padrão
