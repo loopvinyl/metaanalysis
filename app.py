@@ -19,57 +19,38 @@ st.set_page_config(layout="wide", page_title="Vermicompost Meta-Analysis")
 st.title("🌱 Vermicompost Meta-Analysis: Effect of Different Residues")
 
 st.markdown("""
-This application performs a meta-analysis to evaluate the effect of different residues on vermicompost quality.
-You can either upload your own data or use the pre-loaded example data.
+This application performs a meta-analysis to evaluate the effect of different residues on vermicompost quality,
+using pre-loaded example data from the repository.
 """)
 
-# --- Data Upload / Loading ---
-st.header("1. Load Data")
-
-uploaded_file = st.file_uploader("Choose a CSV file to upload (optional)", type="csv")
+# --- Data Loading ---
+st.header("1. Loading Data")
 
 dados_meta_analysis = pd.DataFrame() # Initialize empty DataFrame
-file_path_to_process = None
+file_path_to_process = os.path.join("data", "csv.csv") # Always try to load this file
 
-if uploaded_file is not None:
-    # If a file is uploaded, save it and set its path
-    if not os.path.exists("data"):
-        os.makedirs("data")
-    temp_file_path = os.path.join("data", "uploaded_data.csv")
-    with open(temp_file_path, "wb") as f:
-        f.write(uploaded_file.getbuffer())
-    file_path_to_process = temp_file_path
-    st.success("File uploaded successfully! Processing data...")
-else:
-    # If no file is uploaded, try to use the example file from the repo
-    # Make sure 'data/example.csv' exists in your GitHub repo!
-    # If your file is named csv.csv, ensure it's in data/csv.csv and adjust this path
-    default_file_path = os.path.join("data", "csv.csv") # <--- ALTERADO AQUI: 'csv.csv' ao invés de 'example.csv'
-    if os.path.exists(default_file_path):
-        file_path_to_process = default_file_path
-        st.info("No file uploaded. Using the example data from the repository.")
-    else:
-        st.warning(f"No default data found at '{default_file_path}'. Please upload a CSV file.")
-
-
-if file_path_to_process:
+if os.path.exists(file_path_to_process):
+    st.info(f"Loading data from: '{file_path_to_process}'")
+    
     # --- Data Processing Pipeline ---
     dados = load_and_prepare_data(file_path_to_process)
     if not dados.empty:
         dados_filtrados = filter_irrelevant_treatments(dados)
         dados_grupos = define_groups_and_residues(dados_filtrados)
         dados_meta_analysis = prepare_for_meta_analysis(dados_grupos)
-
+        
         if dados_meta_analysis.empty:
-            st.warning("Not enough data to perform meta-analysis after filtering and preparation.")
+            st.warning("Not enough data to perform meta-analysis after filtering and preparation. Please check the data file.")
         else:
             st.success(f"Data prepared for meta-analysis. {len(dados_meta_analysis)} records available.")
             st.subheader("Prepared Data Sample:")
             st.dataframe(dados_meta_analysis.head())
     else:
-        st.error("Could not load or process data. Please check the file format or default data.")
+        st.error(f"Could not load or process data from '{file_path_to_process}'. Please check the file format or content.")
 else:
-    st.info("Please upload a CSV file or ensure default data is available in the 'data/' directory to proceed with the analysis.")
+    st.error(f"Error: Default data file '{file_path_to_process}' not found in the repository. Please ensure it is present.")
+    st.info("The application requires this file to run.")
+
 
 st.markdown("---")
 
@@ -142,7 +123,7 @@ if not dados_meta_analysis.empty:
                     st.warning("Could not generate Funnel Plot. Check data sufficiency.")
 
 else:
-    st.info("Please upload data and ensure it's successfully processed before running analyses.")
+    st.info("Data could not be loaded or processed. Please check the 'data/csv.csv' file.")
 
 st.markdown("---")
 st.markdown("Developed using Streamlit and Python for meta-analysis of vermicompost quality.")
