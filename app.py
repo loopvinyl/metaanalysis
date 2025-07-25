@@ -26,7 +26,9 @@ st.markdown("""
 st.info("View Study Selection Process") # Pode ser expandido para mostrar mais detalhes ou um modal
 
 # Define o caminho do arquivo de dados (agora apontando para o CSV)
-file_path = "data/csv.csv"
+file_path = "https://raw.githubusercontent.com/loopvinyl/metaanalysis/main/data/csv.csv"
+dados_preparados = ma.load_and_prepare_data(file_path)
+
 
 # Carregar e preparar os dados usando a função do meta_analysis.py
 st.write(f"Loading data from: '{file_path}'")
