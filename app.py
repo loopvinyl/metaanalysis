@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
-import pickle # Import pickle for saving results
+import pickle # Import pickle for saving results, but we will comment out or remove its usage
 
 from meta_analysis import (
     load_and_prepare_data,
@@ -94,19 +94,20 @@ if not dados_meta_analysis.empty and len(dados_meta_analysis) >= 2: # At least 2
     st.dataframe(interaction_model_summary_df)
 
     # --- Save Results ---
-    st.header("4. Save Results")
-    try:
-        # Saving results (models and data)
-        with open("meta_analysis_results.pkl", "wb") as f:
-            pickle.dump({
-                "Residue_Model_Summary": residue_model_summary_df,
-                "Variable_Model_Summary": variable_model_summary_df,
-                "Interaction_Model_Summary": interaction_model_summary_df,
-                "Data": dados_meta_analysis
-            }, f)
-        st.success("Meta-analysis results saved successfully to `meta_analysis_results.pkl`.")
-    except Exception as e:
-        st.error(f"Error saving results: {e}")
+    # Removido o cabeçalho e a lógica de salvamento.
+    # st.header("4. Save Results")
+    # try:
+    #     # Saving results (models and data)
+    #     with open("meta_analysis_results.pkl", "wb") as f:
+    #         pickle.dump({
+    #             "Residue_Model_Summary": residue_model_summary_df,
+    #             "Variable_Model_Summary": variable_model_summary_df,
+    #             "Interaction_Model_Summary": interaction_model_summary_df,
+    #             "Data": dados_meta_analysis
+    #         }, f)
+    #     st.success("Meta-analysis results saved successfully to `meta_analysis_results.pkl`.")
+    # except Exception as e:
+    #     st.error(f"Error saving results: {e}")
 
 else:
     st.info("Please ensure 'csv.csv' is in the same directory as 'app.py' and processed successfully (with at least 2 records) to proceed with the analysis.")
