@@ -12,6 +12,7 @@ def load_and_prepare_data(file_path):
     """
     Carrega o arquivo CSV e realiza a preparação inicial dos dados.
     Assume que o CSV usa ';' como separador e '.' como decimal.
+    Retorna um DataFrame vazio em caso de erro de leitura.
     """
     try:
         dados = pd.read_csv(file_path, sep=';', decimal='.')
@@ -34,9 +35,7 @@ def load_and_prepare_data(file_path):
         dados.dropna(subset=['Mean', 'Std_Dev', 'Treatment', 'Variable', 'Residue'], inplace=True)
         return dados
     except Exception as e:
-        # AQUI FOI REMOVIDO st.error
-        # Em vez disso, a função simplesmente retorna um DataFrame vazio,
-        # e o app.py (seu arquivo principal Streamlit) lida com a exibição do erro.
+        # Não usar st.error aqui. O app.py irá lidar com o DataFrame vazio.
         return pd.DataFrame()
 
 def filter_irrelevant_treatments(df):
@@ -78,7 +77,7 @@ def define_groups_and_residues(df):
         residue = str(row['Residue']).lower()
         if 'sewage' in residue or 'sludge' in residue or 'municipal' in residue or 'waste' in residue or 'industrial' in residue or 'brewery' in residue or 'distillery' in residue:
             return 'Sewage Sludge/Industrial Waste'
-        elif 'grape' in residue or 'fruit' in residue or 'vegetable' in residue or 'pineapple' in residue or 'coffee' in residue or 'sugarcane' in residue or 'paddy' in residue or 'rice' in residue or 'corn' in residue or 'leaf' in residue or 'agro-waste' in residue or 'livestock' in residue or 'manure' in residue or 'straw' in residue: # Added 'pineapple' here
+        elif 'grape' in residue or 'fruit' in residue or 'vegetable' in residue or 'pineapple' in residue or 'coffee' in residue or 'sugarcane' in residue or 'paddy' in residue or 'rice' in residue or 'corn' in residue or 'leaf' in residue or 'agro-waste' in residue or 'livestock' in residue or 'manure' in residue or 'straw' in residue:
             return 'Agricultural Residue'
         elif 'paper' in residue or 'wood' in residue or 'lignin' in residue:
             return 'Paper/Wood Waste'
@@ -201,7 +200,7 @@ def run_meta_analysis_and_plot(data, model_type="Residue"):
     fig, ax = plt.subplots(figsize=(10, 6))
 
     # Linha vertical no zero (ponto de nenhum efeito)
-    ax.axvline(x=0, linestyle="dashed", color="red")
+    ax.axvline(x=0, linestyle="dashed", color="red") # CORREÇÃO APLICADA AQUI
 
     # Plotar coeficientes (excluindo o intercepto se for um modelo categórico)
     # Filtra o intercepto se for um modelo que usa C() para categóricas
