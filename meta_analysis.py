@@ -22,9 +22,17 @@ def load_and_prepare_data(file_path):
         pandas.DataFrame: The prepared DataFrame.
     """
     try:
-        dados = pd.read_csv(file_path, sep=';', decimal='.')
+        # Adicionado o parâmetro 'encoding' para lidar com o UnicodeDecodeError
+        dados = pd.read_csv(file_path, sep=';', decimal='.', encoding='latin1')
     except FileNotFoundError:
         return pd.DataFrame() # Return empty if file not found
+    except UnicodeDecodeError:
+        st.error("Erro de decodificação: Não foi possível ler o arquivo 'csv.csv' com a codificação 'latin1'. Tente uma codificação diferente ou verifique se o arquivo está correto.")
+        return pd.DataFrame() # Return empty on decode error
+    except Exception as e:
+        st.error(f"Ocorreu um erro ao carregar o arquivo: {e}")
+        return pd.DataFrame()
+
 
     # Rename columns to avoid issues with spaces
     dados = dados.rename(columns={'Std Dev': 'Std_Dev', 'Original Unit': 'Original_Unit'})
