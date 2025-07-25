@@ -18,6 +18,7 @@ def load_and_prepare_data(file_path):
     try:
         dados = pd.read_excel(file_path)
         print(f"Successfully loaded data from: {file_path}")
+        print(f"Initial data loaded: {len(dados)} rows.") # Log
     except FileNotFoundError:
         print(f"Error: The file '{file_path}' was not found.")
         return pd.DataFrame()
@@ -27,7 +28,6 @@ def load_and_prepare_data(file_path):
 
     try:
         # Renomear colunas para consistência e facilitar o acesso
-        # Remover 'Residues': 'Residue' daqui, pois Residue será criado dinamicamente
         dados = dados.rename(columns={
             'Variable': 'Variable',
             'Study': 'Study',
@@ -35,9 +35,10 @@ def load_and_prepare_data(file_path):
             'Mean': 'Mean',
             'Std Dev': 'Std_Dev',
             'Unit': 'Unit',
-            'Original Unit': 'Original_Unit', # Renomeado para evitar espaço
+            'Original Unit': 'Original_Unit', 
             'Notes': 'Notes'
         })
+        
         # Converter colunas numéricas, forçando erros para NaN
         dados['Mean'] = pd.to_numeric(dados['Mean'], errors='coerce')
         dados['Std_Dev'] = pd.to_numeric(dados['Std_Dev'], errors='coerce')
@@ -46,8 +47,8 @@ def load_and_prepare_data(file_path):
         dados['Std_Dev'] = dados['Std_Dev'].replace(0, 0.001)
 
         # Remover linhas com valores NaN nas colunas críticas após a conversão
-        # Removida 'Residue' do subset de dropna, pois ela será criada depois.
         dados.dropna(subset=['Mean', 'Std_Dev', 'Treatment', 'Variable', 'Study'], inplace=True)
+        print(f"After initial numeric conversion and dropping NaNs: {len(dados)} rows.") # Log
         
         if dados.empty:
             print("DataFrame became empty after numeric conversion and dropping rows with missing critical data.")
@@ -62,25 +63,25 @@ def load_and_prepare_data(file_path):
 
 def filter_irrelevant_treatments(df):
     """
-    Filtra tratamentos irrelevantes para a meta-análise de vermicompostagem.
+    Filtra tratamentos irrelevantes para a meta-análise de vermicompostagem,
+    sendo IDÊNTICA à lógica do script R.
     """
+    # Lista de tratamentos a serem excluídos, replicando exatamente o script R.
     tratamentos_excluir = [
-        'Fresh Grape Marc', 'Manure', 'Initial Vermicompost',
-        'Initial Grape Marc', 'Initial Soil', 'Initial Sewage Sludge',
-        'Initial Waste Mixture', 'Initial Municipal Solid Waste',
-        'Initial Fruit Waste', 'Initial Vegetable Waste',
-        'Initial Paddy Straw', 'Initial Sugarcane Bagasse',
-        'Initial Wheat Straw', 'Initial Coconut Coir',
-        'Initial Coffee Pulp', 'Initial Rice Straw',
-        'Initial Corn Stover', 'Initial Leaf Litter',
-        'Initial Paper Waste', 'Initial Food Waste',
-        'Initial Brewery Waste', 'Initial Distillery Waste',
-        'Initial Industrial Waste', 'Initial Livestock Waste',
-        'Initial Agro-waste', 'Initial Slurry',
-        'CH0 (Initial)', 'CH25 (Initial)', 'CH50 (Initial)', 'CH75 (Initial)', 'CH100 (Initial)',
-        'T1 (Initial)', 'T2 (Initial)', 'T3 (Initial)', 'T4 (Initial)'
+        "Fresh Grape Marc",
+        "Manure",
+        "CH0 (Initial)",
+        "CH25 (Initial)",
+        "CH50 (Initial)",
+        "CH75 (Initial)",
+        "CH100 (Initial)",
+        "T1 (Initial)",
+        "T2 (Initial)",
+        "T3 (Initial)",
+        "T4 (Initial)"
     ]
     df_filtered = df[~df['Treatment'].isin(tratamentos_excluir)].copy()
+    print(f"After filtering irrelevant treatments (identical to R script): {len(df_filtered)} rows.") # Log
     return df_filtered
 
 
@@ -98,7 +99,9 @@ def define_groups_and_residues(df):
         "Control",
         "Treatment"
     )
-
+    print(f"After assigning Group (Control/Treatment): {len(df)} rows.") # Log
+    print(f"Group counts: {df['Group'].value_counts().to_dict()}") # Log
+    
     # --- CORREÇÃO AQUI: Criar a coluna 'Residue' baseada na coluna 'Study' ---
     def assign_residue_from_study(row):
         study = row['Study']
@@ -116,7 +119,8 @@ def define_groups_and_residues(df):
             return "Other"
 
     df['Residue'] = df.apply(assign_residue_from_study, axis=1)
-    # --- FIM DA CORREÇÃO ---
+    print(f"After creating Residue column: {len(df)} rows.") # Log
+    print(f"Residue type counts: {df['Residue'].value_counts().to_dict()}") # Log
 
     # Atribuir tipo de resíduo (agora usando a coluna 'Residue' recém-criada)
     def assign_residue_type(row):
@@ -131,6 +135,8 @@ def define_groups_and_residues(df):
             return 'Other'
 
     df['Residue_Type'] = df.apply(assign_residue_type, axis=1)
+    print(f"After assigning Residue_Type: {len(df)} rows.") # Log
+    print(f"Residue_Type counts: {df['Residue_Type'].value_counts().to_dict()}") # Log
 
     return df
 
@@ -144,24 +150,33 @@ def prepare_for_meta_analysis(df_groups):
 
     # Identificar variáveis que têm grupo controle
     variables_with_control = df_groups.loc[df_groups['Group'] == "Control", 'Variable'].unique()
+    print(f"Variables with control group found: {variables_with_control.tolist()}") # Log
     
     # Filtrar df_groups para incluir apenas variáveis com controles presentes
     df_groups_filtered_by_control_var = df_groups[df_groups['Variable'].isin(variables_with_control)]
+    print(f"After filtering for variables with controls: {len(df_groups_filtered_by_control_var)} rows.") # Log
 
     # Iterar sobre cada estudo e variável
-    for (study, variable, residue_type), group_df in df_groups_filtered_by_control_var.groupby(['Study', 'Variable', 'Residue_Type']):
+    # Agrupamos por 'Study', 'Variable' e 'Residue_Type'
+    grouped_data = df_groups_filtered_by_control_var.groupby(['Study', 'Variable', 'Residue_Type'])
+    print(f"Number of unique Study-Variable-Residue_Type groups: {len(grouped_data)}") # Log
+
+    for (study, variable, residue_type), group_df in grouped_data:
         control_data = group_df[group_df['Group'] == 'Control']
         treatment_data = group_df[group_df['Group'] == 'Treatment']
 
         if not control_data.empty and not treatment_data.empty:
             control_mean = control_data['Mean'].iloc[0]
             control_sd = control_data['Std_Dev'].iloc[0]
-            control_n = control_data['N'].iloc[0] if 'N' in control_data.columns and not control_data['N'].empty else 10 # Default N=10 se não houver N
+            # Assumindo N=10 se não houver coluna N ou ela estiver vazia.
+            # Se 'N' for uma coluna que pode existir, mas está vazia/NaN, precisamos de um default.
+            # Verifique se 'N' existe e se o valor é válido.
+            control_n = control_data['N'].iloc[0] if 'N' in control_data.columns and pd.notna(control_data['N'].iloc[0]) else 10
 
             for index, row in treatment_data.iterrows():
                 treatment_mean = row['Mean']
                 treatment_sd = row['Std_Dev']
-                treatment_n = row['N'] if 'N' in treatment_data.columns and not row['N'].empty else 10 # Default N=10 se não houver N
+                treatment_n = row['N'] if 'N' in treatment_data.columns and pd.notna(row['N']) else 10
 
                 if control_mean == 0:
                     control_mean = 0.001
@@ -183,15 +198,21 @@ def prepare_for_meta_analysis(df_groups):
                     'Treatment_N': treatment_n,
                     'Control_N': control_n
                 })
+        # else: # Se quiser depurar grupos que não formam pares, descomente
+        #     if control_data.empty:
+        #         print(f"Warning: No control data for Study: {study}, Variable: {variable}, Residue_Type: {residue_type}")
+        #     if treatment_data.empty:
+        #         print(f"Warning: No treatment data for Study: {study}, Variable: {variable}, Residue_Type: {residue_type}")
 
     dados_meta = pd.DataFrame(dados_meta)
     dados_meta.replace([np.inf, -np.inf], np.nan, inplace=True)
     dados_meta.dropna(subset=['lnRR', 'var_lnRR'], inplace=True)
+    print(f"Final data for meta-analysis after lnRR/var_lnRR calculation and NaN removal: {len(dados_meta)} rows.") # Log
 
     return dados_meta
 
 
-# --- Funções de Análise e Plotagem ---
+# --- Funções de Análise e Plotagem (Sem alterações significativas aqui para esta depuração) ---
 
 def run_meta_analysis_and_plot(data, model_type="Residue"):
     """
