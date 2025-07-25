@@ -11,33 +11,38 @@ import io # Adicionado para auxiliar na leitura de arquivos em memória, caso ne
 
 def load_and_prepare_data(file_path):
     """
-    Carrega o arquivo Excel e realiza a preparação inicial dos dados.
+    Carrega o arquivo de dados (agora especificamente CSV) e realiza a preparação inicial.
     Retorna um DataFrame vazio em caso de erro de leitura ou processamento.
     """
     dados = pd.DataFrame()
     
+    # Ajustando para ler o CSV, conforme o script R original e seus dados
+    # Forçaremos a leitura de 'data/csv.csv' para consistência com o R
+    csv_file_path = "data/csv.csv" 
+    
     try:
-        # Assumindo que o arquivo é um Excel e deve ser lido com pd.read_excel
-        dados = pd.read_excel(file_path)
-        print(f"Successfully loaded data from: {file_path}")
+        # Usar read_csv com delimitador e decimal_mark como no script R
+        dados = pd.read_csv(csv_file_path, delimiter=';', decimal='.')
+        print(f"Successfully loaded data from: {csv_file_path}")
         print(f"Initial data loaded: {len(dados)} rows.") # Log
     except FileNotFoundError:
-        print(f"Error: The file '{file_path}' was not found.")
+        print(f"Error: The file '{csv_file_path}' was not found. Please ensure it is in the 'data/' directory.")
         return pd.DataFrame()
     except Exception as e:
-        print(f"Error loading Excel file '{file_path}': {e}")
+        print(f"Error loading CSV file '{csv_file_path}': {e}")
         return pd.DataFrame()
 
     try:
         # Renomear colunas para consistência e facilitar o acesso
+        # Note: No R, `Std Dev` virou `Std_Dev` e `Original Unit` virou `Original_Unit`
         dados = dados.rename(columns={
             'Variable': 'Variable',
             'Study': 'Study',
             'Treatment': 'Treatment',
             'Mean': 'Mean',
-            'Std Dev': 'Std_Dev',
+            'Std Dev': 'Std_Dev', # Ajustado para o nome original do CSV
             'Unit': 'Unit',
-            'Original Unit': 'Original_Unit', 
+            'Original Unit': 'Original_Unit', # Ajustado para o nome original do CSV
             'Notes': 'Notes'
         })
         
@@ -46,9 +51,6 @@ def load_and_prepare_data(file_path):
         dados['Std_Dev'] = pd.to_numeric(dados['Std_Dev'], errors='coerce')
 
         # Substituir 0 em Std_Dev por um valor pequeno para evitar divisão por zero
-        # Lembre-se: no R, usamos n() para o denominador, que é o número de observações.
-        # Aqui, estamos usando n() (implícito) no cálculo de var_lnRR quando iteramos,
-        # mas essa substituição de 0 por 0.001 é para evitar divisão por zero antes mesmo.
         dados['Std_Dev'] = dados['Std_Dev'].replace(0, 0.001)
 
         # Remover linhas com valores NaN nas colunas críticas após a conversão
@@ -62,7 +64,7 @@ def load_and_prepare_data(file_path):
         print("Data preparation successful.")
         return dados
     except Exception as e:
-        print(f"Error during data preparation after initial load for '{file_path}': {e}")
+        print(f"Error during data preparation after initial load for '{csv_file_path}': {e}")
         return pd.DataFrame()
 
 
