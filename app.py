@@ -1,3 +1,9 @@
+import streamlit as st
+
+st.set_page_config(layout="wide", page_title="Vermicompost Meta-Analysis")
+st.write("🚀 App iniciado com sucesso.")  # Adicione isso no topo
+
+
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
