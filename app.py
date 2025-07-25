@@ -1,128 +1,200 @@
-import streamlit as st
 import pandas as pd
+import numpy as np
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from scipy.stats import norm
 import matplotlib.pyplot as plt
+import seaborn as sns
 import os
-from meta_analysis import (
-    load_and_prepare_data,
-    filter_irrelevant_treatments,
-    define_groups_and_residues,
-    prepare_for_meta_analysis,
-    run_meta_analysis_and_plot,
-    generate_forest_plot,
-    generate_funnel_plot
-)
 
-# --- App Configuration ---
-st.set_page_config(layout="wide", page_title="Vermicompost Meta-Analysis")
+# Suppress warnings for cleaner output
+import warnings
+warnings.filterwarnings("ignore")
 
-# --- Title ---
-st.title("🌱 Vermicompost Meta-Analysis: Effect of Different Residues")
+def load_and_prepare_data(file_path):
+    """
+    Loads data from a CSV file and performs initial cleaning and preparation.
 
-st.markdown("""
-This application performs a meta-analysis to evaluate the effect of different residues on vermicompost quality.
-Reading data from a CSV file located in the `data/` folder.
-""")
+    Args:
+        file_path (str): The path to the CSV file.
 
-# --- Data Load from Local Directory ---
-st.header("1. Load Data from Directory")
+    Returns:
+        pandas.DataFrame: The prepared DataFrame.
+    """
+    try:
+        dados = pd.read_csv(file_path, sep=';', decimal='.', encoding='latin1')
+    except FileNotFoundError:
+        return pd.DataFrame()  # Return empty if file not found
+    except Exception as e:
+        print(f"Erro ao ler o arquivo CSV: {e}")
+        return pd.DataFrame()
 
-file_path = "data/csv.csv"  # Local file path
+    # Rename columns to avoid issues with spaces
+    dados = dados.rename(columns={'Std Dev': 'Std_Dev', 'Original Unit': 'Original_Unit'})
 
-dados_meta_analysis = pd.DataFrame()
+    # Convert numeric columns, handling potential errors
+    numeric_cols = ['Mean', 'Std_Dev']
+    for col in numeric_cols:
+        dados[col] = pd.to_numeric(dados[col], errors='coerce')
+    dados = dados.dropna(subset=numeric_cols)  # Drop rows where conversion failed
 
-if os.path.exists(file_path):
-    st.success("Reading data from local CSV file...")
+    return dados
 
-    # --- Data Processing Pipeline ---
-    dados = load_and_prepare_data(file_path)
-    if not dados.empty:
-        dados_filtrados = filter_irrelevant_treatments(dados)
-        dados_grupos = define_groups_and_residues(dados_filtrados)
-        dados_meta_analysis = prepare_for_meta_analysis(dados_grupos)
-        
-        if dados_meta_analysis.empty:
-            st.warning("Not enough data to perform meta-analysis after filtering and preparation.")
-        else:
-            st.success(f"Data prepared for meta-analysis. {len(dados_meta_analysis)} records available.")
-            st.subheader("Prepared Data Sample:")
-            st.dataframe(dados_meta_analysis.head())
+def filter_irrelevant_treatments(dados):
+    treatments_to_exclude = [
+        "Fresh Grape Marc", "Manure",
+        "CH0 (Initial)", "CH25 (Initial)", "CH50 (Initial)", "CH75 (Initial)", "CH100 (Initial)",
+        "T1 (Initial)", "T2 (Initial)", "T3 (Initial)", "T4 (Initial)"
+    ]
+    return dados[~dados['Treatment'].isin(treatments_to_exclude)]
+
+def define_groups_and_residues(dados_filtrados):
+    dados_grupos = dados_filtrados.copy()
+
+    dados_grupos['Group'] = 'Treatment'
+    dados_grupos.loc[
+        (dados_grupos['Study'] == "Ramos et al. (2024)") & (dados_grupos['Treatment'] == "120 days"),
+        'Group'
+    ] = "Control"
+
+    dados_grupos['Residue'] = 'Other'
+    dados_grupos.loc[dados_grupos['Study'] == "Ramos et al. (2024)", 'Residue'] = "Cattle Manure"
+    dados_grupos.loc[dados_grupos['Study'].str.contains("Kumar", na=False), 'Residue'] = "Banana Residue"
+    dados_grupos.loc[dados_grupos['Study'].str.contains("Quadar", na=False), 'Residue'] = "Coconut Husk"
+    dados_grupos.loc[dados_grupos['Study'].str.contains("Srivastava", na=False), 'Residue'] = "Urban Waste"
+    dados_grupos.loc[dados_grupos['Study'].str.contains("Santana", na=False), 'Residue'] = "Grape Marc"
+    dados_grupos.loc[dados_grupos['Treatment'].str.contains('Pineapple', na=False, case=False), 'Residue'] = 'Agricultural Residue'
+
+    return dados_grupos
+
+def prepare_for_meta_analysis(dados_grupos):
+    variables_with_control = dados_grupos[dados_grupos['Group'] == "Control"]['Variable'].unique()
+    dados_meta = dados_grupos[dados_grupos['Variable'].isin(variables_with_control)].copy()
+
+    control_data = dados_meta[dados_meta['Group'] == "Control"].groupby('Variable').agg(
+        Mean_control=('Mean', 'first'),
+        Std_Dev_control=('Std_Dev', 'first')
+    ).reset_index()
+
+    control_data['Std_Dev_control'] = control_data['Std_Dev_control'].replace(0, 0.001)
+    dados_meta = dados_meta[dados_meta['Group'] == "Treatment"].merge(control_data, on='Variable', how='left')
+    dados_meta['Std_Dev_adj'] = dados_meta['Std_Dev'].replace(0, 0.001)
+
+    dados_meta = dados_meta[
+        (dados_meta['Mean_control'] > 0) & (dados_meta['Mean'] > 0)
+    ].copy()
+
+    dados_meta['lnRR'] = np.log(dados_meta['Mean'] / dados_meta['Mean_control'])
+    dados_meta['var_lnRR'] = (dados_meta['Std_Dev_adj']**2 / (1 * dados_meta['Mean']**2)) + \
+                             (dados_meta['Std_Dev_control']**2 / (1 * dados_meta['Mean_control']**2))
+
+    dados_meta = dados_meta.replace([np.inf, -np.inf], np.nan).dropna(subset=['lnRR', 'var_lnRR'])
+
+    return dados_meta
+
+def run_meta_analysis_and_plot(dados_meta, model_type="Residue"):
+    if dados_meta.empty or len(dados_meta['Residue'].unique()) < 2:
+        return pd.DataFrame(), None
+
+    if model_type == "Residue":
+        formula = 'lnRR ~ C(Residue) - 1'
+        title = "Effect of Different Residues on Vermicompost"
+        x_label = "Effect Size (lnRR)"
+        y_label = "Residue Type"
+    elif model_type == "Variable":
+        formula = 'lnRR ~ C(Variable) - 1'
+        title = "Effect of Variables in Vermicompost"
+        x_label = "Effect Size (lnRR)"
+        y_label = "Variable"
+    elif model_type == "Interaction":
+        formula = 'lnRR ~ C(Residue):C(Variable) - 1'
+        title = "Interaction Effect of Residue × Variable"
+        x_label = "Effect Size (lnRR)"
+        y_label = "Residue:Variable Interaction"
     else:
-        st.error("Could not load or process data from the local file. Please check the CSV format.")
-else:
-    st.error(f"File not found: {file_path}. Please ensure the file exists in the 'data/' directory.")
+        raise ValueError("Invalid model_type. Choose 'Residue', 'Variable', or 'Interaction'.")
 
-st.markdown("---")
-
-# --- Meta-Analysis Section ---
-st.header("2. Run Meta-Analysis Models & Generate Plots")
-
-if not dados_meta_analysis.empty:
-    st.markdown("Select a model to run and visualize its results. All plots and outputs are in English.")
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        if st.button("📈 Analyze by Residue Type"):
-            st.subheader("Analysis by Residue Type")
-            with st.spinner("Calculating..."):
-                summary_df, fig = run_meta_analysis_and_plot(dados_meta_analysis, model_type="Residue")
-                if fig:
-                    st.pyplot(fig)
-                    st.subheader("Model Summary (Residue Type)")
-                    st.dataframe(summary_df.set_index('term'))
-                else:
-                    st.warning("Could not generate plot for Residue Type model. Check data sufficiency.")
-
-    with col2:
-        if st.button("📊 Analyze by Variable"):
-            st.subheader("Analysis by Variable")
-            with st.spinner("Calculating..."):
-                summary_df, fig = run_meta_analysis_and_plot(dados_meta_analysis, model_type="Variable")
-                if fig:
-                    st.pyplot(fig)
-                    st.subheader("Model Summary (Variable)")
-                    st.dataframe(summary_df.set_index('term'))
-                else:
-                    st.warning("Could not generate plot for Variable model. Check data sufficiency.")
-
-    with col3:
-        if st.button("🔗 Analyze Interaction (Residue × Variable)"):
-            st.subheader("Analysis by Interaction (Residue × Variable)")
-            with st.spinner("Calculating..."):
-                summary_df, fig = run_meta_analysis_and_plot(dados_meta_analysis, model_type="Interaction")
-                if fig:
-                    st.pyplot(fig)
-                    st.subheader("Model Summary (Interaction)")
-                    st.dataframe(summary_df.set_index('term'))
-                else:
-                    st.warning("Could not generate plot for Interaction model. Check data sufficiency.")
-
-    st.markdown("---")
-    st.header("3. Additional Plots")
-
-    col_forest, col_funnel = st.columns(2)
-    with col_forest:
-        if st.button("🌳 Generate Forest Plot"):
-            st.subheader("Forest Plot of Individual Studies")
-            with st.spinner("Generating forest plot..."):
-                fig_forest = generate_forest_plot(dados_meta_analysis)
-                if fig_forest:
-                    st.pyplot(fig_forest)
-                else:
-                    st.warning("Could not generate Forest Plot. Check data sufficiency.")
+    dados_meta['weights'] = 1 / dados_meta['var_lnRR']
     
-    with col_funnel:
-        if st.button("🧪 Generate Funnel Plot"):
-            st.subheader("Funnel Plot for Publication Bias")
-            with st.spinner("Generating funnel plot..."):
-                fig_funnel = generate_funnel_plot(dados_meta_analysis)
-                if fig_funnel:
-                    st.pyplot(fig_funnel)
-                else:
-                    st.warning("Could not generate Funnel Plot. Check data sufficiency.")
+    try:
+        model = smf.wls(formula, data=dados_meta, weights=dados_meta['weights']).fit()
+    except Exception as e:
+        print(f"Error fitting model for {model_type}: {e}")
+        return pd.DataFrame(), None
 
-else:
-    st.info("Please ensure 'data/csv.csv' exists and is successfully processed before running analyses.")
+    summary_df = model.summary2().tables[1]
+    summary_df = summary_df.reset_index().rename(columns={'index': 'term'})
 
-st.markdown("---")
-st.markdown("Developed using Streamlit and Python for meta-analysis of vermicompost quality.")
+    if model_type == "Residue":
+        summary_df['term'] = summary_df['term'].str.replace('C(Residue)[T.', '', regex=False).str.replace(']', '', regex=False)
+    elif model_type == "Variable":
+        summary_df['term'] = summary_df['term'].str.replace('C(Variable)[T.', '', regex=False).str.replace(']', '', regex=False)
+    elif model_type == "Interaction":
+        summary_df['term'] = summary_df['term'].str.replace('C(Residue)[T.', '', regex=False) \
+                                               .str.replace(']:C(Variable)[T.', ':', regex=False) \
+                                               .str.replace(']', '', regex=False)
+
+    summary_df['lower'] = summary_df['Coef.'] - 1.96 * summary_df['Std.Err.']
+    summary_df['upper'] = summary_df['Coef.'] + 1.96 * summary_df['Std.Err.']
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.pointplot(x='Coef.', y='term', data=summary_df, join=False, errorbar=None, ax=ax)
+    ax.hlines(y=summary_df['term'], xmin=summary_df['lower'], xmax=summary_df['upper'], color='grey')
+    ax.axvline(x=0, linestyle="dashed", color="red")
+    ax.set_title(title)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ax.grid(True, linestyle='--', alpha=0.6)
+    plt.tight_layout()
+
+    return summary_df, fig
+
+def generate_forest_plot(dados_meta, title="Forest Plot"):
+    if dados_meta.empty:
+        return None
+
+    dados_meta = dados_meta.sort_values(by='lnRR')
+    fig, ax = plt.subplots(figsize=(10, len(dados_meta) * 0.4 + 2))
+
+    for i, row in dados_meta.iterrows():
+        label = f"{row['Residue']} - {row['Variable']} ({row['Study']})"
+        ci_lower = row['lnRR'] - 1.96 * np.sqrt(row['var_lnRR'])
+        ci_upper = row['lnRR'] + 1.96 * np.sqrt(row['var_lnRR'])
+
+        ax.plot([ci_lower, ci_upper], [i, i], color='gray', linewidth=1)
+        ax.plot(row['lnRR'], i, 's', color='blue', markersize=5)
+        ax.text(ax.get_xlim()[1] + 0.1, i, f"{row['lnRR']:.2f} [{ci_lower:.2f}, {ci_upper:.2f}]", va='center')
+        ax.text(ax.get_xlim()[0] - 0.1, i, label, va='center', ha='right')
+
+    ax.axvline(x=0, color='red', linestyle='--', linewidth=0.8)
+    ax.set_yticks(range(len(dados_meta)))
+    ax.set_yticklabels([])
+    ax.set_xlabel("Log Response Ratio (lnRR) [95% CI]")
+    ax.set_title(title)
+    ax.grid(True, linestyle='--', alpha=0.6, axis='x')
+    plt.tight_layout()
+    return fig
+
+def generate_funnel_plot(dados_meta):
+    if dados_meta.empty:
+        return None
+
+    dados_meta['se_lnRR'] = np.sqrt(dados_meta['var_lnRR'])
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+    ax.scatter(dados_meta['lnRR'], dados_meta['se_lnRR'], color='blue', alpha=0.7)
+
+    max_se = dados_meta['se_lnRR'].max()
+    x_vals = np.linspace(-max_se * 2, max_se * 2, 100)
+    ax.plot(x_vals, np.abs(x_vals) / 1.96, color='grey', linestyle='--', label='95% CI')
+    ax.plot(x_vals, -np.abs(x_vals) / 1.96, color='grey', linestyle='--')
+    ax.axvline(0, color='red', linestyle=':', label='No Effect (lnRR=0)')
+
+    ax.set_xlabel("Log Response Ratio (lnRR)")
+    ax.set_ylabel("Standard Error")
+    ax.set_title("Funnel Plot for Publication Bias")
+    ax.invert_yaxis()
+    ax.grid(True, linestyle='--', alpha=0.6)
+    ax.legend()
+    plt.tight_layout()
+    return fig
