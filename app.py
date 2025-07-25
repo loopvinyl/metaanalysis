@@ -23,51 +23,12 @@ This application performs a meta-analysis to evaluate the effect of different re
 using pre-loaded example data from the repository.
 """)
 
-# --- Data Loading ---
+# --- Data Loading Section (including PRISMA) ---
 st.header("1. Loading Data")
 
-dados_meta_analysis = pd.DataFrame() # Initialize empty DataFrame
-file_path_to_process = os.path.join("data", "csv.csv") # Always try to load this file
-
-if os.path.exists(file_path_to_process):
-    st.info(f"Loading data from: '{file_path_to_process}'")
-
-    # --- Data Processing Pipeline ---
-    dados_raw = load_and_prepare_data(file_path_to_process) # Renamed to dados_raw for clarity
-
-    if not dados_raw.empty:
-        total_initial_records = len(dados_raw)
-
-        dados_filtrados = filter_irrelevant_treatments(dados_raw)
-        dados_grupos = define_groups_and_residues(dados_filtrados)
-        dados_meta_analysis = prepare_for_meta_analysis(dados_grupos)
-
-        if dados_meta_analysis.empty:
-            st.warning("Not enough data to perform meta-analysis after filtering and preparation. Please check the data file.")
-        else:
-            st.success(f"Data prepared for meta-analysis. {len(dados_meta_analysis)} records available.")
-            st.subheader("Prepared Data Sample:")
-            st.dataframe(dados_meta_analysis.head())
-
-            st.markdown(f"""
-            **Note on Data Filtering:**
-            The initial dataset contained **{total_initial_records}** records.
-            During preparation, records were filtered to include only relevant vermicompost treatments,
-            exclude initial/raw material samples, ensure the presence of control groups for variables,
-            and remove any entries with missing or invalid data for meta-analysis calculations.
-            This process resulted in **{len(dados_meta_analysis)}** records for the meta-analysis.
-            """)
-    else:
-        st.error(f"Could not load or process data from '{file_path_to_process}'. Please check the file format or content.")
-else:
-    st.error(f"Error: Default data file '{file_path_to_process}' not found in the repository. Please ensure it is present.")
-    st.info("The application requires this file to run.")
-
-
-st.markdown("---") # Separador após a seção de carregamento de dados
-
-# --- PRISMA Flow Diagram Section ---
-st.header("PRISMA 2020 Flow Diagram")
+# --- PRISMA Flow Diagram Section (MOVED HERE) ---
+# Note: Using st.subheader for PRISMA title to make it a sub-part of "1. Loading Data"
+st.subheader("PRISMA 2020 Flow Diagram")
 
 with st.expander("View Study Selection Process"):
     st.markdown("""
@@ -122,10 +83,51 @@ with st.expander("View Study Selection Process"):
     ```
     """)
 
-st.markdown("---") # Separador após a seção PRISMA
+st.markdown("---") # Separador após a seção PRISMA, ainda dentro do contexto de carregamento de dados
+
+# --- Data Loading Logic (now comes after PRISMA within section 1) ---
+dados_meta_analysis = pd.DataFrame() # Initialize empty DataFrame
+file_path_to_process = os.path.join("data", "csv.csv") # Always try to load this file
+
+if os.path.exists(file_path_to_process):
+    st.info(f"Loading data from: '{file_path_to_process}'")
+
+    # --- Data Processing Pipeline ---
+    dados_raw = load_and_prepare_data(file_path_to_process) # Renamed to dados_raw for clarity
+
+    if not dados_raw.empty:
+        total_initial_records = len(dados_raw)
+
+        dados_filtrados = filter_irrelevant_treatments(dados_raw)
+        dados_grupos = define_groups_and_residues(dados_filtrados)
+        dados_meta_analysis = prepare_for_meta_analysis(dados_grupos)
+
+        if dados_meta_analysis.empty:
+            st.warning("Not enough data to perform meta-analysis after filtering and preparation. Please check the data file.")
+        else:
+            st.success(f"Data prepared for meta-analysis. {len(dados_meta_analysis)} records available.")
+            st.subheader("Prepared Data Sample:")
+            st.dataframe(dados_meta_analysis.head())
+
+            st.markdown(f"""
+            **Note on Data Filtering:**
+            The initial dataset contained **{total_initial_records}** records.
+            During preparation, records were filtered to include only relevant vermicompost treatments,
+            exclude initial/raw material samples, ensure the presence of control groups for variables,
+            and remove any entries with missing or invalid data for meta-analysis calculations.
+            This process resulted in **{len(dados_meta_analysis)}** records for the meta-analysis.
+            """)
+    else:
+        st.error(f"Could not load or process data from '{file_path_to_process}'. Please check the file format or content.")
+else:
+    st.error(f"Error: Default data file '{file_path_to_process}' not found in the repository. Please ensure it is present.")
+    st.info("The application requires this file to run.")
+
+
+st.markdown("---") # Separador final da seção 1
 
 # --- Meta-Analysis Section ---
-st.header("2. Run Meta-Analysis Models & Generate Plots") # Este título mantém o "2." pois o PRISMA não é uma "etapa" da análise de dados do app, mas sim uma explicação do processo de seleção dos dados
+st.header("2. Run Meta-Analysis Models & Generate Plots")
 
 if not dados_meta_analysis.empty:
     st.markdown("Select a model to run and visualize its results. All plots and outputs are in English.")
