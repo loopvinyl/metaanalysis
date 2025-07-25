@@ -191,3 +191,9 @@ if not dados_meta_analysis.empty:
                     st.pyplot(fig_funnel)
                 else:
                     st.warning("Could not generate Funnel Plot. Check data sufficiency.")
+
+else:
+    st.info("Data could not be loaded or processed. Please check the 'data/csv.csv' file.")
+
+st.markdown("---")
+st.markdown("Developed using Streamlit and Python for meta-analysis of vermicompost quality.")
